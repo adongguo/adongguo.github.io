@@ -446,6 +446,17 @@ async function generateRecommendations(starredRepos, maxRecommendations) {
     };
 }
 
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function formatNumber(num) {
     if (num >= 1000) {
         return (num / 1000).toFixed(1) + 'k';
@@ -458,26 +469,26 @@ function renderRecommendation(repo) {
     
     return `
         <div class="repo-card">
-            <h3><a href="${repo.html_url}" target="_blank">${repo.full_name}</a></h3>
-            <p class="repo-description">${repo.description || 'No description available'}</p>
+            <h3><a href="${escapeHtml(repo.html_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(repo.full_name)}</a></h3>
+            <p class="repo-description">${escapeHtml(repo.description) || 'No description available'}</p>
             <div class="repo-meta">
                 ${repo.language ? `
                     <span>
-                        <span class="language-color" style="background-color: ${languageColor}"></span>
-                        ${repo.language}
+                        <span class="language-color" style="background-color: ${escapeHtml(languageColor)}"></span>
+                        ${escapeHtml(repo.language)}
                     </span>
                 ` : ''}
                 <span>⭐ ${formatNumber(repo.stargazers_count)}</span>
                 <span>🍴 ${formatNumber(repo.forks_count)}</span>
-                ${repo.license ? `<span>📜 ${repo.license.spdx_id}</span>` : ''}
+                ${repo.license ? `<span>📜 ${escapeHtml(repo.license.spdx_id)}</span>` : ''}
             </div>
             ${repo.topics && repo.topics.length > 0 ? `
                 <div class="topics">
-                    ${repo.topics.slice(0, 5).map(topic => `<span class="topic">${topic}</span>`).join('')}
+                    ${repo.topics.slice(0, 5).map(topic => `<span class="topic">${escapeHtml(topic)}</span>`).join('')}
                 </div>
             ` : ''}
             ${repo.recommendationReason ? `
-                <div class="reason">💡 ${repo.recommendationReason}</div>
+                <div class="reason">💡 ${escapeHtml(repo.recommendationReason)}</div>
             ` : ''}
         </div>
     `;
