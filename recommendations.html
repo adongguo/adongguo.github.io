@@ -218,7 +218,7 @@ title: Repository Recommendations
         <h2>Configuration</h2>
         <div class="input-group">
             <label for="githubUsername">GitHub Username</label>
-            <input type="text" id="githubUsername" placeholder="Enter GitHub username" value="adongguo">
+            <input type="text" id="githubUsername" placeholder="Enter GitHub username (e.g., octocat)">
         </div>
         <div class="input-group">
             <label for="maxRecommendations">Maximum Recommendations</label>
@@ -307,8 +307,9 @@ async function getStarredRepos(username) {
     const repos = [];
     let page = 1;
     const perPage = 100;
+    const maxPages = 5; // Limit to 500 repos max for performance
     
-    while (true) {
+    while (page <= maxPages && repos.length < 500) {
         const response = await fetchWithRetry(
             `${GITHUB_API}/users/${username}/starred?per_page=${perPage}&page=${page}`
         );
@@ -319,9 +320,6 @@ async function getStarredRepos(username) {
         
         if (data.length < perPage) break;
         page++;
-        
-        // Limit to first 500 starred repos for performance
-        if (repos.length >= 500) break;
     }
     
     return repos;
@@ -416,8 +414,8 @@ async function generateRecommendations(starredRepos, maxRecommendations) {
             }
         });
         
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 250));
     }
     
     // Get recommendations based on top languages
@@ -433,7 +431,7 @@ async function generateRecommendations(starredRepos, maxRecommendations) {
             }
         });
         
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 250));
     }
     
     return {
@@ -565,12 +563,5 @@ async function getRecommendations() {
     }
 }
 
-// Auto-load recommendations on page load for default user
-window.addEventListener('DOMContentLoaded', () => {
-    const username = document.getElementById('githubUsername').value;
-    if (username) {
-        // Optional: auto-load for default user
-        // getRecommendations();
-    }
-});
+// Page loaded - ready for user interaction
 </script>
