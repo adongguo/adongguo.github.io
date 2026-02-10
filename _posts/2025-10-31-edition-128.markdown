@@ -1,0 +1,549 @@
+---
+title: Git Rev News Edition 128 (October 31st, 2025)
+layout: default
+date: 2025-10-31 12:06:51 +0100
+author: chriscool
+categories: [news]
+navbar: false
+---
+
+## Git Rev News: Edition 128 (October 31st, 2025)
+
+Welcome to the 128th edition of [Git Rev News](https://git.github.io/rev_news/rev_news/),
+a digest of all things Git. For our goals, the archives, the way we work, and how to contribute or to
+subscribe, see [the Git Rev News page](https://git.github.io/rev_news/rev_news/) on [git.github.io](http://git.github.io).
+
+This edition covers what happened during the months of September and October 2025.
+
+## Discussions
+
+### General
+
+* [Git participated in GSoC (Google Summer of Code) 2025](https://summerofcode.withgoogle.com/programs/2025/organizations/git)
+
+  All the contributors have successfully passed their final evaluation
+  and published a final report:
+
+  - Lucas Oshiro [worked](https://lucasoshiro.github.io/gsoc-en/#weeks) on the
+    [Machine-Readable Repository Information Query Tool](https://summerofcode.withgoogle.com/programs/2025/projects/fGgMYHwl)
+    project. He was mentored by Patrick Steinhardt and Karthik Nayak. The final
+    report can be found on
+    [his website](https://lucasoshiro.github.io/gsoc-en/#final-report).
+
+  - Meet Soni [worked](https://inosmeet.github.io/posts/gsoc25/) on the
+    [Consolidate ref-related functionality into git-refs](https://summerofcode.withgoogle.com/programs/2025/projects/xVrT5e2q)
+    project. He was mentored by Patrick Steinhardt and Jialuo She. The final
+    report can be found on
+    [his website](https://inosmeet.github.io/posts/gsoc25/gsoc25_final/).
+
+  - Ayush Chandekar [worked](https://ayu-ch.github.io/) on the
+    [Refactoring in order to reduce Git’s global state](https://summerofcode.withgoogle.com/programs/2025/projects/no7dVMeG)
+    project. He was mentored by Christian Couder and Ghanshyam Thakkar. The final
+    report can be found on
+    [his website](https://ayu-ch.github.io/2025/08/29/gsoc-final-report.html).
+
+  Kaartic Sivaraam and Christian Couder were
+  ["org admins"](https://developers.google.com/open-source/gsoc/help/oa-tips).
+
+  Congratulations to the contributors, their mentors and the org admins!
+
+* [Git Merge 2025 conference](https://git-merge.com/) and [Contributor's Summit 2025](https://lore.kernel.org/git/aOQVeVYY6zadPjln@nand.local/)
+
+  The Git Merge conference happened on
+  [September 29th and 30th](https://github.blog/open-source/git/20-years-of-git-2-days-at-github-hq-git-merge-2025-highlights/)
+  in San Francisco, hosted by [GitHub](https://github.com/) at their
+  GitHub HQ. The [session records](https://www.youtube.com/playlist?list=PLNXkW_le40U6Ms1XlsYKi_yUh5J2FOSlf)
+  are available.
+
+  On the second day, there was also
+  [the Contributor's Summit](https://lore.kernel.org/git/aOQVeVYY6zadPjln@nand.local/).
+  The [full notes](https://docs.google.com/document/d/1arvvXP8DrF3F8PCKQOmGvYh5jUg8P9Clx9m-FgDD4EI/)
+  as well as [notes broken down by topic](https://lore.kernel.org/git/aOQV6iM49QDhcC+C@nand.local/#r)
+  are available.
+
+* [Git Mini Summit 2025](https://lore.kernel.org/git/aGwHt9HCd86hVuKh@pks.im/)
+
+  On August 28 in Amsterdam, a [Git Mini Summit](https://lore.kernel.org/git/aGwHt9HCd86hVuKh@pks.im/)
+  happened as
+  [a co-hosted event of the Open Source Summit Europe](https://osseu2025.sched.com/event/28R2Q/git-mini-summit-additional-fee-pre-registration-required),
+  sponsored by GerritForge, GitButler, GitLab, and Google.
+  The [schedule](https://drive.google.com/file/d/1vacimnS9NUTcYUsRe8100El8Hdl_C7GD/view)
+  and [session records](https://blog.gitbutler.com/git-mini-summit-2025)
+  are available.
+
+<!---
+### Reviews
+-->
+
+
+### Support
+
++ [[Change] Git build issue on NonStop](https://lore.kernel.org/git/01c101dc2842$38903640$a9b0a2c0$@nexbridge.com/)
+
+  Randall S. Becker reported on the mailing list that CI tests on the
+  NonStop x86 platform were broken after the `uintptr_t` type started
+  to be used in [clar](https://github.com/clar-test/clar) tests when
+  displaying error messages in test failures (in case pointer comparisons
+  fail).
+
+  Jeff King, alias Peff, replied to Randall that `uintptr_t` was
+  already used in many places in the regular code, and guessed the
+  issue might come from how clar defined that type. He noted though
+  that the line in the clar test where `uintptr_t` appeared also
+  contained `PRIxPTR` which is a macro that is not used in the regular
+  code. So he wondered if just replacing that macro with `PRIuMAX`
+  (which is often used) would be enough to fix the issue.
+
+  `PRIxPTR`, `PRIuMAX` and similar macros are format specifier macros
+  from the C standard library (defined in `<inttypes.h>`) that provide
+  portable ways to print integer types using functions like `printf()`
+  across different platforms. They are all named in the same way, with
+  `PRI` meaning `printf`, the next letter indicating the format, like
+  `x` for hexadecimal and `u` for unsigned decimal, and the last part
+  indicating the type, like `PTR` for pointer-sized integers, `MAX`
+  for maximum-width integers, `64` for 64-bit, etc.
+
+  Randall replied to Peff that replacing `PRIxPTR` with `PRIuMAX`
+  would work, and that he was going to try it.
+
+  Patrick Steinhardt also replied to Randall and Peff saying it would
+  work, and asked Peff if he wanted to send that change.
+
+  Peff replied to Patrick that he'd be happy if Patrick sent the
+  change, but noted that using `PRIxMAX` might be better than
+  `PRIuMAX` as the code wanted to print hexadecimal values.
+
+  Patrick then reported to Peff that Peff's suggestion to use the
+  `PRIxMAX` or `PRIuMAX` format specifier macros didn't work on 32 bit
+  systems, because casting a pointer to an integer of different size
+  (the pointer is 32 bits, but `uintmax_t` is 64 bits) fails.
+
+  Patrick proposed using `%p` as a format specifier saying it might be
+  a better trade-off. The downside was that the output format would be
+  unpredictable across platforms as `%p` doesn't have a standardized
+  output format. So tests that validated the exact error message
+  format would have to be dropped. But at least `%p` would work
+  everywhere and produce stable output.
+
+  Junio Hamano, the Git maintainer, agreed with Patrick that `%p` was
+  "the most appropriate solution".
+
+  Randall then confirmed that `%p` worked on NonStop x86 even if the
+  man pages warned to the contrary.
+
+  The `%p` solution was eventually merged to the 'master' branch.
+
+
+## Developer Spotlight: Kristoffer Haugsbakk
+
+* **Who are you and what do you do?**
+
+  I’m Kristoffer from Norway. My day job is working on a Java webapp
+  primarily used for clinical mental health questionnaires.
+
+* **What would you name your most important contribution to Git?**
+
+  One I like was when I and the mailing list collaborators fixed a bug
+  related to Git notes handling by [git-format-patch(1)][1]. It’s
+  small and niche but Git notes handling is very important to me; I
+  think Notes are a great way to maintain metadata between patch
+  submissions. In fact I think it’s great for most commit metadata
+  that I am interested in maintaining.
+
+[1]: https://git-scm.com/docs/git-format-patch
+
+* **What are you doing on the Git project these days, and why?**
+
+  The one I am focusing on is improving the [git-patch-id(1)][2]
+  documentation. It so happens that you can use that command to make a
+  commit—patch-id mapping for the whole repository, which you then in
+  turn can use to make an improved [git-cherry(1)][3] oneliner (one
+  that says what the upstream commit hash is) as well as, say, using
+  commands like git-range-diff to see if the upstream committer made
+  any changes to your submission like fixing commit message typos. But
+  most uses of this command that I see just use it to figure out what
+  the patch ID of one single commit is and have to script everything
+  around that, like loop over [git-rev-list(1)][4].
+
+[2]: https://git-scm.com/docs/git-patch-id
+[3]: https://git-scm.com/docs/git-cherry
+[4]: https://git-scm.com/docs/git-rev-list
+
+* **If you could get a team of expert developers to work full time on
+  something in Git for a full year, what would it be?**
+
+  I would ask them to find a way for projects to define their own
+  conventions and preferences that can be easily shared with all
+  contributors. Something better than asking each contributor to
+  download and install hooks. Projects need a better and more
+  declarative way to configure how their project is supposed to
+  work. One example might be that a project does not want merge
+  commits to land in the mainline. It should be simple to take that
+  high-level goal and make sure that the in-effect central repository
+  never gets any merge commits.
+
+  Git will not be replaced any time soon, despite it being more
+  difficult to use than it ought to be. But we can already see what
+  the effects of the high difficulty of using it is: some projects
+  outsource all commit messages to issue trackers, and change
+  proposals (pull requests and patch series descriptions) to webapp
+  forges. (Meaning they don’t even duplicate the PR description
+  somewhere in Git like in a commit message.)  What you end up with is
+  still Git but with all the interesting information living at least
+  one hyperlink away.
+
+* **If you could remove something from Git without worrying about
+  backwards compatibility, what would it be?**
+
+  I can’t think of a single thing to remove that would have a big
+  impact.
+
+  I guess I would remove [git-filter-branch(1)][5]. People can use
+  [git-filter-repo(1)][6]. And with that one removed I wouldn’t have to ask
+  people to not use it any more. ;)
+
+[5]: https://git-scm.com/docs/git-filter-branch
+[6]: https://github.com/newren/git-filter-repo
+
+* **Documentation contributions require understanding both the technical
+  implementation and the user perspective. How do you approach
+  bridging that gap? Do you have strategies for ensuring documentation
+  stays accurate as code evolves?**
+
+  Most of the challenge in bridging the gap for me is about trying to
+  describe things accurately while not being tedious and verbose. The
+  worst challenge is when I realistically have one paragraph to
+  explain something but there are eight factors to mention. (Not a
+  real case; just the feeling of a challenge that I have encountered
+  before.)
+
+  For things that are either just difficult or have many factors to
+  consider I think the best approach we have right now is to mention
+  other documentation pages in parentheses. An obvious candidate is
+  [gitglossary(7)][7] where we can gather all kinds of jargon and be
+  as verbose as we want to. :)
+
+  I don’t have any strategies for ensuring that documentation stays
+  accurate as code evolves. Let’s take something concrete as an
+  example: an update to the documentation adds a very similar
+  paragraph to two documentation pages. That is an obvious maintenance
+  burden since a later update is likely to necessitate a change in
+  both places, but you are likely to only deal with one of them. The
+  obvious fix is to parameterize the paragraph. But I don’t have good
+  indirect experience with that in [AsciiDoc][8]; the last time I saw
+  something parameterized was when an [AsciiDoc][8] macro forced
+  inline formatting to be handled literally. The cure seems worse than
+  the disease to me.
+
+  The best I can do now when making updates is to investigate the
+  lines that I am changing and find the histories of any possible
+  near-duplicate texts.
+
+[7]: https://git-scm.com/docs/gitglossary
+[8]: https://asciidoc.org/
+
+* **What is your favorite Git-related tool/library, outside of Git
+  itself?**
+
+  [Magit][9]. An Emacs Git frontend.
+
+[9]: https://magit.vc/
+
+* **Do you happen to have any memorable experience w.r.t. contributing
+  to the Git project? If yes, could you share it with us?**
+
+  When I added a test case to `t/t7001-mv.sh` that [made the continuous
+  build routine on Windows (CI) time out][16]. The test was
+  `test_expect_failure` and triggered a C assertion, and the Windows
+  CI pops up a modal dialog on assertion failures. That dialog is of
+  course never dismissed by any operator and so the suite eventually
+  timed out.
+
+[16]: https://lore.kernel.org/git/pull.1908.git.1745593515875.gitgitgadget@gmail.com/
+
+* **What is your toolbox for interacting with the mailing list and for
+  development of Git?**
+
+  I use the builtin commands for making patches and sending them
+  ([git-format-patch(1)][10] and [git-send-email(1)][11]). For programming and
+  writing I use the basic, needed tools along with Emacs. Very
+  occasionally I will use GDB.
+
+[10]: https://git-scm.com/docs/git-format-patch
+[11]: https://git-scm.com/docs/git-send-email
+
+* **What is your advice for people who want to start Git development?
+  Where and how should they start?**
+
+  Find something technically wrong in the documentation and fix
+  it. That’s what I did in 2016; I wanted to test out this new (to me)
+  “email-based workflow”. Focus on fixing things instead of
+  subjectively improving something. Because someone might object and
+  propose that you send a new version. Making subjective documentation
+  improvements is the next step in terms of difficulty I guess.
+
+  It sounds trivial but someone used to Git forges will have enough
+  challenges just sending proper patches to the project over email.
+
+  Also read through [`Documentation/SubmittingPatches`][12]. I don’t
+  really see many corrections that refer to other documents. You could
+  of course get a correction that refers to some [*lore*][13] but that
+  is unlikely to happen for simple changes if you just structure it
+  similar to recent, accepted submissions that you find.
+
+[12]: https://git-scm.com/docs/SubmittingPatches
+[13]: https://lore.kernel.org/git
+
+* **If there's one tip you would like to share with other Git
+  developers, what would it be?**
+
+  You won’t get any C programming tips from me since I can’t write or
+  edit three lines of C code without segfaulting five times.
+
+  Take advantage of the fact that the Git history is so
+  well-structured. Maybe you find some questionable behavior or
+  code. Use the “pickaxe” technique (see [git-log(1)][14]) on some
+  good candidate text and trace the behavior back to the start. Maybe
+  the commit message explains the issue or behavior. If not use
+  `refs/notes/amlog` (which you should be “subscribed” to already) and
+  see if something relevant was discussed on the patch discussion. If
+  not there is likely to be no written record out there; another thing
+  that this project is disciplined about is keeping the relevant
+  discussion on the mailing list, not the mailing list and N other
+  satellite fora.
+
+  Those links (to commits and archived emails) are very valuable when
+  you want to discuss a change to something that has been in
+  [git(1)][15] for years and years.
+
+[14]: https://git-scm.com/docs/git-log#Documentation/git-log.txt--Gregex
+[15]: https://git-scm.com/docs/git
+
+## Other News
+
+__Various__
+
++ [Git considers SHA-256, Rust, LLMs, and more](https://lwn.net/Articles/1042172/)
+  by Jonathan Corbet on LWN\.net.
++ [Git Developers Talk About Potentially Releasing Git 3.0 By The End Of Next Year](https://www.phoronix.com/news/Git-3.0-Release-Talk-2026)
+  by  Michael Larabel on Phoronix.
++ [GitHub is migrating to Azure! And goodbye to new development for a year.](https://www.redhotcyber.com/en/post/github-is-migrating-to-azure-and-goodbye-to-new-development-for-a-year/)
+  by Redazione RHC on Red Hot Cyber.
++ [Fedora Moves Towards Forgejo](https://fedoramagazine.org/fedora-moves-towards-forgejo-a-unified-decision/)
+  by Matthew Miller and Akashdeep Dhar on December 4, 2024
+  in Fedora Magazine.
+    + [Forgejo](https://forgejo.org/) is a self-hosted lightweight software forge,
+      written in Go; nowadays a hard fork of Gitea (which in turn was based on Gogs).
+      It was first mentioned in passing in [Git Rev News Edition #103](https://git.github.io/rev_news/2023/09/30/edition-103/).
+
+
+__Light reading__
+
++ [Building for the future: on Tangled's existence and direction](https://anirudh.fi/future)
+  by Anirudh Oppiliappan on their blog;
+  also published [at icy takes blog](https://icy.leaflet.pub/3m47cll72hs25) on ATProto.
+    + [Tangled.sh](https://blog.tangled.sh/intro) is a new social-enabled Git collaboration platform
+      built on top of the AT Protocol / ATProto
+      (which is behind the [BlueSky](https://bsky.app/) microblogging federated social media service).
+      It was first mentioned in [Git Rev News Edition #125](https://git.github.io/rev_news/2025/07/31/edition-125/).
++ [6 months of Tangled: a quick recap, and notes on the future](https://blog.tangled.org/6-months)
+  by Anirudh Oppiliappan and Akshay Oppiliappan on Tangled Blog.
++ [Socially self-hosting source code with Tangled on Bluesky](https://anil.recoil.org/notes/disentangling-git-with-bluesky)
+  by Anil Madhavapeddy, Professor of Planetary Computing, on his blog.
++ [Redistributing Git with Nostr](https://fiatjaf.com/18ff5416.html)
+  by início on their blog.
+    + There exists [gitstr (`git str`)](https://github.com/fiatjaf/gitstr),
+      which is a tool to send and receive Git patches
+      over [Nostr](https://nostr.com/), using [NIP-34](https://github.com/nostr-protocol/nips/pull/997)
+      (first mentioned in [Git Rev News Edition #109](https://git.github.io/rev_news/2024/03/31/edition-109/)).
+    + Note that [git-credential-oauth](https://github.com/hickford/git-credential-oauth),
+      a Git credential helper that securely authenticates to GitHub, GitLab, BitBucket and Gerrit
+      using [OAuth](https://datatracker.ietf.org/wg/oauth/about/),
+      can replace the "create an account; pick a password; confirm an email address; set up SSH keys for pushing" steps.
++ [How GitHub won software development](https://www.infoworld.com/article/4069045/how-github-won-software-development.html)
+  by Nick Hodges on Rubber Duck Reflections opinions blog on InfoWorld.
++ [You already have a git server](https://maurycyz.com/misc/easy_git/)
+  on Maurycy's blog;
+  describes how one can serve Git repositories via SSH (with SSH access)
+  or via dumb HTTP (with a web server).
++ [Simple automated deployments using git push](https://garrido.io/notes/simple-automated-deployments-git-push/)
+  by Gabriel Garrido on his blogs / notes (2024).
++ [Discussion of the Benefits and Drawbacks of the Git Pre-Commit Hook](https://yeldirium.de/2025/10/09/pre-commit-hooks/index.html)
+  by Hannes Leutloff on his blog.
++ [You can use `fzf` to review git commits](https://jvns.ca/til/fzf-preview-git-commits/)
+  by Julia Evans in her TIL (Today I've Learned) section.
+    + See also [Improving shell workflows with fzf](https://seb.jambor.dev/posts/improving-shell-workflows-with-fzf/),
+      mentioned in [Git Rev News Edition #74](https://git.github.io/rev_news/2021/04/30/edition-74/), and
+      [Curing A Case Of Git-UX](https://oppi.li/posts/curing_a_case_of_git-UX/),
+      mentioned in [Git Rev News Edition #126](https://git.github.io/rev_news/2025/08/31/edition-126/).
++ [Switch to Jujutsu already: a tutorial](https://www.stavros.io/posts/switch-to-jujutsu-already-a-tutorial/)
+  by Stavros on Stavros' Stuff.
+    + [Jujutsu (`jj`)](https://jj-vcs.github.io/jj/) is a Git-compatible version control system
+      written in Rust, which was first mentioned in
+      [Git Rev News Edition #85](https://git.github.io/rev_news/2022/03/31/edition-85/).
++ [Magit Is Amazing!](https://heiwiper.com/posts/magit-is-awesome/)
+  by Abdallah Maouche (heiwiper) on his blog
+  (how it does things that others need to use Jujutsu over Git for).
+    + [Magit](https://magit.vc/) is a popular [Emacs](https://www.gnu.org/software/emacs) editor interface to Git,
+      first mentioned (in passing) in [Git Rev News Edition #6](https://git.github.io/rev_news/2015/08/05/edition-6/).
++ [Branching in a Sapling Monorepo](https://engineering.fb.com/2025/10/16/developer-tools/branching-in-a-sapling-monorepo/)
+    + [Sapling](https://sapling-scm.com/) is a scalable, user-friendly, and open-source source control system
+      that powers Meta's (Facebook's) monorepo.
+      It was first mentioned in [Git Rev News Edition #93](https://git.github.io/rev_news/2022/11/30/edition-93/).
++ [Stop Rebasing Everything: Your Git History Isn’t That Special](https://dev.to/dolig/stop-rebasing-everything-your-git-history-isnt-that-special-ln3),
+  an argument in the merge-vs-rebase debate.
+  by Guillaume on DEV\.to.
++ [Diff Algorithms](https://flo.znkr.io/diff/)
+  by Florian Zenker on his website.<br>
+  The result of this exploration was [znkr.io/diff](https://znkr.io/diff),
+  a difference algorithm module for Go.
+    + Note that with [`git diff`](https://git-scm.com/docs/git-diff)
+      you can choose between `myers` (default), `minimal`, `patience` and `histogram` algorithms.
++ [Git Super-Power: The Three-Way Merge](https://qsantos.fr/2024/05/01/git-super-power-the-three-way-merge/)
+  by Quentin Santos on his blog (2024).<br>
+  Provides the following tl;dr: `git config --global merge.conflictstyle diff3`.
++ [Anyone Can Commit Code as You on GitHub (Here's How to Stop Them)](https://www.nickyt.co/blog/anyone-can-commit-code-as-you-on-github-heres-how-to-stop-them-2in7/)
+  with signed commits (with tutorial focusing on macOS using GPG Keychain).
+  Written by Nick Taylor on his Just Some Dev blog.
++ [GitHub Ensloppification](https://dbushell.com/2025/08/11/github-ensloppification/)
+  by David Bushell on his blog.
++ ["GitHub" Is Starting to Feel Like Legacy Software](https://www.mistys-internet.website/blog/blog/2024/07/12/github-is-starting-to-feel-like-legacy-software/)
+  rant by Misty De Méo on her blog (2024).
++ [Implementing Conventional Commits with Jira Ticket Prefix Validation](https://heristop.github.io/blog/2024-07-09-conventional-commit-jira/)
+  by Alexandre Mogère (heristop) on Zazen Code.
+    + The [Conventional Commits](https://www.conventionalcommits.org/) specification
+      was first mentioned in [Git Rev News Edition #52](https://git.github.io/rev_news/2019/06/28/edition-52/),
+      and in many editions since.
++ [Conventional Commits considered harmful](https://larr.net/p/cc.html)
+  (or rather overly strict enforcement of the standard),
+  rant by Salih Muhammed, with a few further links.
++ [Contribute to GitFichas](https://jtemporal.com/contribute-to-gitfichas/)
+  by Jessica Temporal on her blog.
+    + [GitFichas](https://gitfichas.com/en) (also know as GitStudyCards)
+      is a collection of study cards about Git,
+      for devs that might need a refresher about Git commands.
+      Mentioned in [the previous edition of Git Rev News](https://git.github.io/rev_news/2025/09/30/edition-127/).
+
+
+__Easy watching__
+
++ [Gerrit User Summit 2025, featuring also GitButler and Jujutsu](https://www.youtube.com/playlist?list=PLySCWiWz9cNuiJK2Uy3foHGvkxL3fBLUC)
+  by Luca Milanesio on GerritForge's YouTube channel.
++ [Jujutsu at Google](https://www.youtube.com/watch?v=v9Ob5yPpC0A&list=PLOU2XLYxmsILM5cRwAK6yKdtKnCK6Y4Oh&index=8)
+  ([slides](https://drive.google.com/file/d/1dVzug1lHoOxdbFu8gcCJCu-G_uVMUATI/edit))
+  on Google for Developers channel on YouTube;
+  part of [JJ Con 2025 playlist](https://www.youtube.com/playlist?list=PLOU2XLYxmsILM5cRwAK6yKdtKnCK6Y4Oh).<br>
+  In this talk, Martin von Zweigbergk presents
+  on Jujutsu architecture and future plans.<br>
+  JJ Con 2025 was a dedicated conference hosted by Google
+  for the [Jujutsu](https://jj-vcs.github.io/jj/latest/) version control system.
++ [Solving Git's Pain Points with Jujutsu (with Martin von Zweigbergk)](https://www.youtube.com/watch?v=ulJ_Pw8qqsE)
+  on Developer Voices channel on YouTube.
+
+
+__Scientific papers__
+
++ Ya-Nan Li, Yaqing Song, Qiang Tang, Moti Yung:
+  _"End-to-End Encrypted Git Services"_,
+  Cryptology {ePrint} Archive, Paper 2025/1208,
+  <https://eprint.iacr.org/2025/1208>,
+  DOI:10.1145/3719027.3744815
+    + See [_"Scientists develop end-to-end encryption for git services"_](https://techxplore.com/news/2025-10-scientists-encryption-git.html)
+      article by University of Sydney, edited by Stephanie Baum, reviewed by Robert Egan,
+      on TechXplore.
++ S.R.P. van Hal, M. Post, K. Wendel:
+  _"Generating Commit Messages from Git Diffs"_,
+  [arXiv:1911.11690](https://arxiv.org/abs/1911.11690) (2019)<br>
+  mentions "inherent shortcoming of current commit message generation models,
+  which perform well by memorizing certain constructs."
+
+
+__Git tools and sites__
+
++ [diff-modulo-base](https://git.sr.ht/~nhaehnle/diff-modulo-base)
+  is a tool that allows you to compare the relevant changes
+  of two versions of a rebased branch given three input diffs:
+  two _base_ diffs that show the changes since the respective merge bases
+  and a _target_ diff between the branches you are actually interested in.
+
+  It is very similar to (and actually builds on) `git range-diff`,
+  but differs in resulting output.
+  Written in Rust, under MIT License.
++ [Worktree Manager](https://github.com/jarredkenny/worktree-manager) (wtm)
+  is a fast, modern CLI tool for managing Git worktrees in bare repositories.
+  Written in TypeScript for Bun, under MIT License.
++ [git-metrics](https://github.com/jdrouet/git-metrics)
+  is a Git extension that makes it possible to track metrics about your project,
+  which are stored within the git repository (using `git notes`).
+  Written in Rust, under MIT License.<br>
+  Described in [Build metrics and budgets with git-metrics](https://dev.to/jdrouet/build-metrics-and-budgets-with-git-metrics-4pb4)
+  article by Jérémie Drouet on DEV\.to (2024).
+    + There is another [git-metrics](https://github.com/Praqma/git-metrics) tool,
+      by the Praqma / Eficode DevOps company,
+      which consists of a set of scripts to analyse a Git repository for metrics
+      such as lead time and open branches.  Written in Python, no license provided.
+      It was mentioned in passing in [Git Rev News Edition #48](https://git.github.io/rev_news/2019/02/27/edition-48/).
++ [git-spice](https://abhinav.github.io/git-spice/) is a tool for stacking Git branches.
+  It lets you manage and navigate stacks of branches, conveniently modify and rebase them,
+  and create GitHub Pull Requests or GitLab Merge Requests from them.
+  Written in Go, under GPL 3.0 License.
+    + A _stacked branch_ refers to a set of branches that build upon each other in a linear sequence.
+      Stacked branches or stacked diffs were first mentioned in [Git Rev News #44](https://git.github.io/rev_news/2018/10/24/edition-44/),
+      and most recently in [Git Rev News #127](https://git.github.io/rev_news/2025/09/30/edition-127/),
+      where you can find even more links about this technique.
++ [Git Granary](https://git.dbushell.com/dbushell/granary)
+  is a [Git Large File Storage](https://git-lfs.com/) (LFS)
+  server implementation written in TypeScript.  Under MIT License.
+  Git Granary was designed for self-hosted personal use.<br>
+  See [Git Granary](https://dbushell.com/2024/07/25/git-granary/)
+  blog post by David Bushell on his blog (2024).
++ [gibr](https://github.com/ytreister/gibr) is a Git CLI tool
+  for intelligently creating branch names.
+  It connects your Git workflow to your issue tracker for that purpose;
+  currently supporting GitHub, GitLab, Jira, and Linear
+  (with Monday\.com support planned).
+  Written in Python, under MIT License.
++ [0github.com](https://0github.com/)
+  is a service offering a heatmap diff viewer for code reviews,
+  color-coding every diff line/token by how much human attention it probably needs.
+  To try it, replace github.com with 0github.com in any GitHub pull request URL.
+  The [cmux](https://cmux.dev/) engine it uses is open source (MIT License).
+  It uses a LLM (Large Language Model) to perform this task.
+
+
+## Releases
+
++ Git [2.51.2](https://lore.kernel.org/git/xmqqo6psjq2n.fsf@gitster.g/),
+[2.51.1](https://lore.kernel.org/git/xmqqa51suhh5.fsf@gitster.g/)
++ Git for Windows [v2.51.2(1)](https://github.com/git-for-windows/git/releases/tag/v2.51.2.windows.1),
+[v2.51.1(1)](https://github.com/git-for-windows/git/releases/tag/v2.51.1.windows.1),
+[v2.51.0(2)](https://github.com/git-for-windows/git/releases/tag/v2.51.0.windows.2)
++ GitHub Enterprise [3.18.0](https://docs.github.com/enterprise-server@3.18/admin/release-notes#3.18.0)
++ GitLab [18.5.1, 18.4.3, 18.3.5](https://about.gitlab.com/releases/2025/10/22/patch-release-gitlab-18-5-1-released/),
+[18.5](https://about.gitlab.com/releases/2025/10/16/gitlab-18-5-released/),
+[18.4.2, 18.3.4, 18.2.8](https://about.gitlab.com/releases/2025/10/08/patch-release-gitlab-18-4-2-released/)
++ Gerrit Code Review [3.10.9](https://www.gerritcodereview.com/3.10.html#3109),
+[3.13.0-rc0](https://www.gerritcodereview.com/3.13.html#3130),
+[3.13.0-rc1](https://www.gerritcodereview.com/3.13.html#3130),
+[3.13.0-rc2](https://www.gerritcodereview.com/3.13.html#3130),
+[3.13.0-rc3](https://www.gerritcodereview.com/3.13.html#3130),
+[3.13.0-rc4](https://www.gerritcodereview.com/3.13.html#3130),
+[3.13.0-rc5](https://www.gerritcodereview.com/3.13.html#3130)
++ GitKraken [11.5.1](https://help.gitkraken.com/gitkraken-desktop/current/),
+[11.5.0](https://help.gitkraken.com/gitkraken-desktop/current/)
++ GitHub Desktop [3.5.3](https://desktop.github.com/release-notes/)
++ Git Cola [4.16.0](https://github.com/git-cola/git-cola/releases/tag/v4.16.0)
++ GitButler [0.16.10](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.16.10),
+[0.16.9](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.16.9)
++ Kinetic Merge [1.10.0](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.10.0),
+[1.9.1](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.9.1)
+
+## Credits
+
+This edition of Git Rev News was curated by
+Christian Couder &lt;<christian.couder@gmail.com>&gt;,
+Jakub Narębski &lt;<jnareb@gmail.com>&gt;,
+Markus Jansen &lt;<mja@jansen-preisler.de>&gt; and
+Kaartic Sivaraam &lt;<kaartic.sivaraam@gmail.com>&gt;
+with help from Kristoffer Haugsbakk, Lee Reilly,
+Luca Milanesio and Štěpán Němec.

@@ -1,0 +1,605 @@
+---
+title: Git Rev News Edition 130 (December 31st, 2025)
+layout: default
+date: 2025-12-31 12:06:51 +0100
+author: chriscool
+categories: [news]
+navbar: false
+---
+
+## Git Rev News: Edition 130 (December 31st, 2025)
+
+Welcome to the 130th edition of [Git Rev News](https://git.github.io/rev_news/rev_news/),
+a digest of all things Git. For our goals, the archives, the way we work, and how to contribute or to
+subscribe, see [the Git Rev News page](https://git.github.io/rev_news/rev_news/) on [git.github.io](http://git.github.io).
+
+This edition covers what happened during the months of November and December 2025.
+
+## Discussions
+
+<!---
+### General
+-->
+
+<!---
+### Reviews
+-->
+
+### Support
+
+* [git-2.51.0: Fetching tags does not work](https://lore.kernel.org/git/CAB9xhmPcHnB2%2Bi6WeA3doAinv7RAeGs04%2Bn0fHLGToJq%3DUKUNw%40mail.gmail.com)
+
+  Last September, David Bohman reported a regression in Git 2.51.0
+  where `git fetch --tags` failed to update tags in a bare
+  repository. He noted that the command output indicated tags would be
+  updated, but they were not actually added to the
+  repository. Reverting to version 2.50.1 resolved the issue.
+
+  Junio Hamano, the Git maintainer, attempted to reproduce the issue
+  using a simple bare clone setup but was unsuccessful, suggesting
+  that David needed to narrow down the specific conditions.
+
+  In early November, David returned to the thread reporting that the
+  issue persisted in Git 2.51.2. He provided a specific reproduction
+  case involving a bare clone of the [`bind9` source repository](https://gitlab.isc.org/isc-projects/bind9).
+  The output showed that one
+  tag update was rejected (with a `would clobber existing tag` error),
+  and consequently, all other valid new tags (`v9.18.41`, etc.)
+  failed to appear in the repository, despite being listed as "new
+  tag" in the output. The command exited with status code 1.
+
+  Randall S. Becker suggested using `git fetch --tags --force` to
+  clear the situation. David Bohman replied that while he could
+  reproduce it locally, the key behavioral change was that prior to
+  version 2.51, Git would fail regarding the conflicting tag but still insert the
+  non-conflicting ones.
+
+  Chris Torek identified the new reference transaction system
+  introduced in recent versions as the root cause. He noted that the
+  behavior had shifted to "all or nothing" (either all tags get
+  updated, or none do) and questioned which behavior was actually
+  buggy. David Bohman argued that this was a risky change for a mature
+  tool and noted that the diagnostic messages were misleading because
+  they reported success for tags that were not actually inserted.
+
+  Karthik Nayak confirmed he could reproduce the issue and attributed
+  it to transaction reference updates.
+
+  Karthik submitted
+  [version 1](https://lore.kernel.org/git/20251103-fix-tags-not-fetching-v1-1-e63caeb6c113%40gmail.com)
+  of a patch to fix the issue. He explained that commit `0e358de64a`
+  (fetch: use batched reference updates, 2025-05-19) introduced
+  batched reference updates for `git fetch`. When fetching references,
+  updates are added to a transaction. However, specifically when
+  fetching tags, if a conflict occurs, the function
+  `fetch_and_consume_refs()` returns an error code immediately. This
+  caused the code to jump to the cleanup section, skipping the commit
+  of the transaction entirely, and thus discarding even valid updates.
+
+  The proposed fix involved extracting the transaction commit logic
+  into a new function, `commit_ref_transaction()`, and ensuring it is
+  called even when an error code is returned, provided the fetch is
+  not atomic.
+
+  Eric Sunshine reviewed the patch, asking why the test code was
+  wrapped in subshells and suggesting that `!` should be replaced with
+  `test_must_fail`. Karthik agreed to these changes.
+
+  Justin Tobler reviewed the code, agreeing with the logic. He
+  suggested adding a comment to `commit_ref_transaction()` to
+  distinguish it from `ref_transaction_commit()` and asked if the
+  return value of this new function should be checked.
+
+  Karthik submitted
+  [version 2](https://lore.kernel.org/git/20251106-fix-tags-not-fetching-v2-1-610cb4b0e7c8%40gmail.com)
+  of the patch. This version added comments, removed subshells from
+  tests, and extended the fix to the `backfill_tags()` function.
+
+  Patrick Steinhardt reviewed version 2. He questioned the commit
+  message's mention of the deprecated "branches/" format in relation
+  to tag backfilling. Karthik replied, clarifying that after
+  re-reading the code, he understood that backfilling happens when the
+  user does not specify `--tags` or `--no-tags`, confirming Patrick's
+  understanding.
+
+  Patrick noted that the code now had three different call sites
+  committing the transaction and felt it was "somewhat fragile."
+  Justin pointed out that the return code of
+  `commit_ref_transaction()` was being ignored in the new
+  implementation. Karthik agreed to check the return value.
+
+  Karthik submitted
+  [version 3](https://lore.kernel.org/git/20251108-fix-tags-not-fetching-v3-0-a12ab6c4daef%40gmail.com)
+  of the series. He split the changes into two commits: one for
+  extracting the logic and one for the fix. He also moved the commit
+  logic into the cleanup section to avoid calling it at every failure
+  point.
+
+  Patrick reviewed version 3. He suggested using `goto out` in
+  `commit_ref_transaction()` for better readability. He also asked for
+  clarification on why the condition `retcode > 0` was safe in the
+  cleanup section, specifically regarding `prune_refs()`. Karthik
+  replied, explaining that `prune_refs()` creates its own internal
+  transaction, but later realized he was mistaken about the timing and
+  promised to verify.
+
+  Karthik submitted
+  [version 4](https://lore.kernel.org/git/20251111-fix-tags-not-fetching-v4-0-185d836ec62a%40gmail.com).
+  This version simplified the code and changed the check from
+  `retcode > 0` to just `retcode`.
+
+  Patrick pointed out that the commit message regarding `prune_refs()`
+  behavior change seemed incorrect because no transaction exists at
+  that stage. Karthik verified this and confirmed there is no change
+  for `prune_refs()`.
+
+  Karthik submitted
+  [version 5](https://lore.kernel.org/git/20251113-fix-tags-not-fetching-v5-0-371ea7ec638d%40gmail.com)
+  with corrected commit messages and better test cleanup.
+
+  Junio reviewed version 5 and identified a remaining
+  issue. He noted that while the patch fixed the transaction commit,
+  jumping to the cleanup label early meant that subsequent operations
+  (specifically `commit_fetch_head()`, `set_upstream()`, and setting
+  remote HEADs) were still being skipped when errors occurred. He
+  argued that in non-atomic fetches, these should still run. Karthik
+  agreed and proposed a fix to only jump to cleanup if `--atomic` was
+  used.
+
+  Karthik submitted
+  [version 6](https://lore.kernel.org/git/20251118-fix-tags-not-fetching-v6-0-2a2f15fc137e%40gmail.com),
+  adding a third commit to the series to address the skipped
+  operations regression identified by Junio.
+
+  Junio reviewed version 6. He liked the tests but warned
+  against using `touch` to create files due to timestamp issues and
+  noted a missing test case for `--set-upstream` on a successful
+  fetch. Karthik agreed to fix these.
+
+  Karthik submitted
+  [version 7](https://lore.kernel.org/git/20251119-fix-tags-not-fetching-v7-0-0c8f9fb1f287%40gmail.com),
+  removing `touch` and adjusting the test prerequisites.
+
+  Eric reviewed the tests in version 7, asking if `! test -f` should
+  be `test_path_is_missing`. Junio suggested using `rm -f FETCH_HEAD`
+  before the test to ensure it is actually created during the run, and
+  inspecting the file content to verify what was recorded. Karthik
+  agreed.
+
+  Karthik submitted
+  [version 8](https://lore.kernel.org/git/20251121-fix-tags-not-fetching-v8-0-23b53a8a8334%40gmail.com).
+  This version verified the content of `FETCH_HEAD` and used
+  `test_path_is_missing`.
+
+  Junio commented that the series looked good. Patrick pointed out a
+  tiny grammar nit ("eventhough") and asked if the shell syntax
+  `>file` used in the test was compatible with all systems, noting
+  `: >file` is more typical. Karthik replied that existing tests use
+  the shorter syntax, so it should be fine.
+
+  The small patch series was eventually merged, and should be part of
+  Git 2.53.0 that should be released at the latest towards the
+  beginning of February 2026. With this version, not only the transaction logic
+  will be fixed, but related regressions regarding post-fetch
+  operations (like updating `FETCH_HEAD`) will also have been
+  identified and resolved.
+
+
+## Developer Spotlight: Lucas Seiki Oshiro
+
+* **Who are you and what do you do?**
+
+  My name is Lucas Oshiro, I'm one of the three
+  GSoC '25 participants working on Git. I'm from São Paulo, Brazil,
+  and I hold bachelor and master degrees in Computer Science from the
+  [University of São Paulo](https://www5.usp.br/#english). I don't
+  have only one specific interest in programming topics, I enjoy
+  several different topics, like lower-lever C code (like we do for Git),
+  FP languages (especially Haskell), play with network simulators, data
+  analysis, operating systems, databases and so on.
+
+* **How did you initially become interested in contributing to Git,
+  and what motivated you to choose it as your GSoC project?**
+
+  Well, it's a long story... I think that it dates back to 2017, in a
+  Computer Networks assignment at my university. My partner in that
+  assignment was [Matheus Tavares](https://matheustavares.gitlab.io/posts/gsoc-final-report),
+  who participated in [GSoC '19 on Git](https://summerofcode.withgoogle.com/archive/2019/projects/4787791739748352).
+  At the time, we needed to study a vulnerability and how it was fixed.
+  We chose [CVE-2017-1000117](https://nvd.nist.gov/vuln/detail/cve-2017-1000117),
+  which was a vulnerability in Git. That was my first time reading Git
+  source code.
+
+  Two years later, I was a member of a [group focused on contributing to Free/Open-Source software](https://flusp.ime.usp.br)
+  at my University. I sent a patch to Git at the time, but I needed to
+  focus on other stuff and I couldn't finish it.
+
+  After that, I started to work as a back-end software engineer and
+  witnessed several Git-related problems. My two previous experiences with
+  Git's source code made me want to understand what was happening and
+  delving into its internals, so I could help other developers from my
+  company when something unexpected happened with Git.
+
+  This way, Git always felt like the right choice.
+
+* **How do you feel your contribution has impacted the Git community
+  or the broader open source ecosystem?**
+
+  My GSoC project was to create the new command [`git repo info`](https://summerofcode.withgoogle.com/archive/2025/projects/fGgMYHwl)).
+  It was released in Git 2.52.0 and, like many other new Git features, I
+  expect it will take some time to be widely adopted, since it's only
+  available in bleeding-edge repositories. But I expect that it will be
+  useful for forges, CIs, local tools, scripts, and other tools that
+  depend on Git.
+
+* **Is there any aspect of Git that you now see differently after
+  having contributed to it?**
+
+  I can't think of anything that I see differently after GSoC, but my
+  previous contacts with Git's source code made me realize the importance
+  of having a good commit history with good commit messages. It also made
+  me understand how powerful Git is as a debugging and searching tool.
+
+* **How do you balance your contributions with other responsibilities
+  like work or school?**
+
+  This year, I was more focused on finishing my master's research and I
+  didn't have too many conflicts with GSoC, so I could focus on my
+  master's when my patches were under review. However, I must admit that
+  one of the reasons that I didn't apply to GSoC before was that, here
+  in Brazil, we typically have final exams in June, which makes it hard
+  to balance them with something else.
+
+* **Can you share how GSoC helped enhance your technical and
+  non-technical skills (like communication, project management,
+  etc.)?**
+
+  I see Git as a product created by developers, for developers, and I
+  think that here we sometimes need to do the work that in other contexts
+  would be done by product owners and designers. I felt that especially
+  during code reviews, which were often more focused on product and design
+  decisions rather than the code itself. I had to learn how to discuss
+  these kinds of decisions, always aiming to do what is best for Git
+  and its users.
+
+* **What was the biggest challenge you faced during your contributions
+  to Git, and how did you overcome it?**
+
+  I think that the biggest challenge was the complete redesign of
+  `git repo info` during the GSoC period, which made me re-write it from
+  scratch several times. I think this was a consequence of my previous
+  answer and that this challenge was solved itself.
+
+* **Have you thought about mentoring new GSoC / Outreachy students?**
+
+  Yes, it would be very nice!
+
+* **If you could get a team of expert developers to work full time on
+  something in Git for a full year, what would it be?**
+
+  Git is amazing and I think we all agree that it makes the programmers'
+  lives easier. It would be great if we had a GUI wrapping Git but
+  targeting non-technical users.
+
+* **If you could remove something from Git without worrying about
+  backwards compatibility, what would it be?**
+
+  Perhaps commands that accumulate responsibilities, like `git checkout`,
+  `git reset` and `git rev-parse`. They make sense from the Git
+  perspective, but I think they are confusing from the users'
+  perspective.
+
+* **What upcoming features or changes in Git are you particularly
+  excited about?**
+
+  Some that come to my mind are:
+
+  - Patrick Steinhardt's new [`git history`](https://lore.kernel.org/git/20250819-b4-pks-history-builtin-v1-0-9b77c32688fe@pks.im/)
+    command: rewriting history is essential to keep the repository sane
+    and useful as a data storage, if done correctly. Currently we do that
+    through interactive rebase but I think it can be intimidating for less
+    experienced users. Jujutsu proposes a more straightforward way to do
+    that, and it's nice to see Patrick bringing it to Git.
+
+  - Justin Tobler's [new `git repo structure` command](https://public-inbox.org/git/20251217175404.37963-1-jltobler@gmail.com/):
+    of course I'm interested in this subcommand since it is the sibling of
+    my GSoC project.  But it's not only because of that: a Git repository is
+    a very rich source of information and `git repo structure` will be a
+    powerful tool to retrieve it.
+
+  - Julia Evans's [contributions to documentation](https://public-inbox.org/git/?q=f%3A%22Julia+Evans%22&r=):
+    Julia has been producing high-quality content about several programming
+    topics for years. I'm happy to see Git being documented by someone so
+    committed to spreading knowledge and who knows how to explain advanced
+    concepts using a simple language.
+
+* **What is your favorite Git-related tool/library, outside of Git
+  itself?**
+
+  I use [delta](https://github.com/dandavison/delta) a lot, I like the way
+  it highlights diffs. Other tools that I find interesting are [Jujutsu](https://docs.jj-vcs.dev/latest/)
+  and [Magit](https://magit.vc/), but I don't use them too much.
+
+* **What is your toolbox for interacting with the mailing list and for
+  development of Git?**
+
+  I like desktop mail clients, but I don't have a strong preference. On
+  Linux, I use Thunderbird. On Mac, I use Apple Mail. I also have some
+  GMail filters for classifying the messages (patches, What's Cooking and
+  Rev News announcements).
+
+  However, those mail clients don't have code syntax highlighting, and it's
+  hard to read the patches inside them. For that purpose, I use
+  [patch-hub](https://github.com/kworkflow/patch-hub), a TUI for reviewing
+  patches from kernel mailing lists (including Git).
+
+* **How do you envision your own involvement with Git or other open
+  source projects in the future?**
+
+  There are some things I want to finish in `git repo info`, and I
+  still send patches for it. I enjoyed contributing to Git and I
+  don't want to stop here.
+
+  Outside Git development, I'll give an advanced course on Git next
+  month. It will be a great opportunity to share what I've learned here
+  with other people.
+
+* **What is your advice for people who want to start Git development?
+  Where and how should they start?**
+
+  Read the [Git Internals chapter from Pro Git](https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain),
+  follow everything described in [Hacking Git](https://git.github.io/Hacking-Git/),
+  and work on a [microproject](https://git.github.io/SoC-2025-Microprojects/).
+
+* **Would you recommend other students or contributors to participate
+  in the GSoC, Outreachy or other mentoring programs, working on Git?
+  Why? Do you have advice for them?**
+
+  Yes. I mean, I've already recommended some people from my university to
+  apply to GSoC or Outreachy on Git and gave some tips to them. Some of
+  them have already sent patches that were accepted.
+
+
+## Other News
+
+__Various__
+
++ [Debian’s git transition](https://diziet.dreamwidth.org/20436.html)
+  by Ian Jackson on diziet's journal on Dreamwidth.
+  The main goal of the transition is to make it so that
+  everyone who interacts with Debian source code should be able to do so entirely in git.
++ [Git’s New Era: What Git 2.52 and the Road to Git 3.0 Mean for Developers in 2026](https://blog.stackademic.com/gits-new-era-what-git-2-52-and-the-road-to-git-3-0-mean-for-developers-in-2026-eb2c3b4e6e79)
+  by Faisal haque on Medium.
+  Free access provided via Faisal haque's Friend Link.
+    + See also [What’s new in Git 2.52.0?](https://about.gitlab.com/blog/whats-new-in-git-2-52-0/) on GitLab Blog and
+	  [Highlights from Git 2.52](https://github.blog/open-source/git/highlights-from-git-2-52/) on GitHub Blog,
+	  mentioned in the [previous edition of Git Rev News](https://git.github.io/rev_news/2025/11/30/edition-129/).
+	+ See also [Git Developers Talk About Potentially Releasing Git 3.0 By The End Of Next Year](https://www.phoronix.com/news/Git-3.0-Release-Talk-2026) on Phoronix,
+	  mentioned in [Git Rev News Edition #128](https://git.github.io/rev_news/2025/10/31/edition-128/).
+    + There is also [BreakingChanges: Git 3.0](https://git-scm.com/docs/BreakingChanges#_git_3_0)
+	  document in the Git documentation.
+
+
+__Light reading__
+
++ [Package managers keep using git as a database, it never works out](https://nesbitt.io/2025/12/24/package-managers-keep-using-git-as-a-database.html)
+  by Andrew Nesbitt on his blog.
++ [Git Commit Count Percentile Stats, Annual Days Active from 878,592 Dev-year Data Points](https://www.gitclear.com/research_studies/git_commit_count_percentiles_annual_days_active_from_largest_data_set)
+  by Bill Harding, a first-party research by GitClear.
++ [Fizzy Design Evolution: A Flipbook from Git](https://www.zolkos.com/2025/12/08/fizzy-design-evolution-a-flipbook-from-git)
+  by Rob Zolkos on his blog; includes the generated video.
++ [Comparing the homepage-claims of popular Git hosting providers](https://www.zufallsheld.de/2025/12/02/comparing-homepage-claims-of-git-providers/)
+  by  Sebastian Gumprich on zufallsheld - a tech blog.
++ [Are people migrating away from GitHub?](https://www.roboleary.net/blog/github-migration/),
+  a short post (with examples) by Rob O'Leary on his blog.
++ [GitHub Actions Has a Package Manager, and It Might Be the Worst](https://nesbitt.io/2025/12/06/github-actions-package-manager.html)
+  by Andrew Nesbitt on his blog.
++ [The Pain That Is GitHub Actions](https://www.feldera.com/blog/the-pain-that-is-github-actions)
+  by Gerd Zellweger on feldera blog.
++ [Migrating from GitHub to Codeberg](https://robinmetral.com/notes/migrating-from-github-to-codeberg/)
+  by Robin Métral on his blog.
++ [Migrating my code to Codeberg](https://eldred.fr/blog/codeberg/) and
+  [GitHub → Codeberg: my experience](https://eldred.fr/blog/forge-migration/)
+  by Eldred Habert on ISSOtm's warehouse blog.
++ [Migrating Dillo from GitHub](https://dillo-browser.org/news/migration-from-github/)
+  by Rodrigo Arias Mallo on Dillo project blog.
++ [Migrating from GitHub to Codeberg](https://ziglang.org/news/migrating-from-github-to-codeberg/)
+  by Andrew on Zig Language News.
++ [How Do Git Remotes Work? And How Do I Self-host My Own?](https://fev.al/posts/git-remote/)
+  What it takes to create the simplest, barest self-hosted Git remote,
+  and learn stuff about Git in the process.
+  Post by Charles Féval on his blog.
++ [Guarding My Git Forge Against AI Scrapers](https://vulpinecitrus.info/blog/guarding-git-forge-ai-scrapers/)
+  by ~lymkwi (lux) on VulpineCitrus blog.
+  The forge in question is a self-hosted [Forgejo instance](https://git.vulpinecitrus.info/).
++ [Rethinking Git Pre-Commit Hooks](https://mathieularose.com/rethinking-git-pre-commit-hooks)
+  by Mathieu Larose on his blog.
++ [pre-commit hooks are fundamentally broken](https://jyn.dev/pre-commit-hooks-are-fundamentally-broken/)
+  by Jynn Nelson (@jyn) on the website of jyn.
+    + See also [Discussion of the Benefits and Drawbacks of the Git Pre-Commit Hook](https://yeldirium.de/2025/10/09/pre-commit-hooks/index.html)
+	  in [Git Rev News Edition #128](https://git.github.io/rev_news/2025/10/31/edition-128/).
+	+ The [Git Hooks](https://githooks.com/) website gives an example of using pre-commit hook
+	  to check the commit message for spelling errors;<br>
+	  the [`pre-commit.sample`](https://github.com/git/git/blob/master/templates/hooks/pre-commit.sample)
+	  provided with Git checks for non-ASCII characters in filenames
+	  (and can be configured to be turned off with `hooks.allownoascii`).
+	+ There are various tools that help managing pre-commit hooks, like
+	  [pre-commit](https://pre-commit.com/)
+	  (first mentioned in [Git Rev News #45](https://git.github.io/rev_news/2018/11/21/edition-45/))
+	  and [_prek_](https://prek.j178.dev/)
+	  (first mentioned in [Git Rev News #127](https://git.github.io/rev_news/2025/09/30/edition-127/)).
++ [Fixing the "Ghost Folder" in GitHub: Converting a Broken Submodule to a Normal Folder](https://dev.to/raziq_din_bd0274cc2ac748b/fixing-the-ghost-folder-in-github-converting-a-broken-submodule-to-a-normal-folder-44c5)
+  by Raziq Din on DEV\.to.
++ [Shooting myself in the foot with Git by accident](https://utcc.utoronto.ca/~cks/space/blog/programming/GitConcurrentUsageOops)
+  by Chris Siebenmann on CSpace blog.
+  The Git error in question was
+  _"error: fetching ref refs/remotes/origin/master failed: incorrect old value provided"_.
++ [Tracking renamed files in Git](https://oleb.net/2025/git-file-renaming/) and
+  [Use 'git mv' to record filename case changes in Git](https://oleb.net/2025/git-mv-case-change/)
+  by Ole Begemann on his blog.
++ [Branch Protection Rules vs Rulesets: The Right Way to Protect Your Git Repository](https://dev.to/piyushgaikwaad/branch-protection-rules-vs-rulesets-the-right-way-to-protect-your-git-repos-305m)
+  by Piyush Gaikwad on DEV\.to.
+  The main idea is to use Branch Protection Rules for long lived branches,
+  and Branch Rulesets for short lived branches, defining rules before branches are created.
++ [`magit-insert-worktrees` improves status buffers](https://huonw.github.io/blog/2025/12/magit-insert-worktrees/)
+  by Huon Wilson on his "Huon on the internet" blog.
+    + The [Magit](https://magit.vc/) package for interfacing to Git within the Emacs editor
+	  was first mentioned in passing in [Git Rev News Edition #6](https://git.github.io/rev_news/2015/08/05/edition-6/);
+	  among other mentions there was [Emacs and Magit](https://lwn.net/Articles/727550/)
+	  article on LWN\.net in [Git Rev News Edition #30](https://git.github.io/rev_news/2017/08/16/edition-30/).
++ [Archiving git branches as tags](https://etc.octavore.com/2025/12/archiving-git-branches-as-tags/)
+  with a git alias.  Blog post by octavore
+  (the author of [Delta](https://github.com/octavore/delta), a command-line diff tool)
+  on "et cetera".
++ [Building a Meta-Logger: Tracking My Work Across GitHub, Codeberg, and Bitbucket Using Go](https://dev.to/nimxch/building-a-meta-logger-tracking-my-work-across-github-codeberg-and-bitbucket-using-go-4kp6)
+  by Nimai Charan on DEV\.to.
++ [why i think jj-vcs is worth your time](https://schpet.com/note/why-i-think-jj-vcs-is-worth-your-time)
+  on Schpet’s Notebook.
+    + [Jujutsu (`jj`)](https://jj-vcs.github.io/) is a Git-compatible
+	  version control system written in Rust, which was first mentioned
+	  in [Git Rev News Edition #85](https://git.github.io/rev_news/2022/03/31/edition-85/).
+	+ See also [Should I Switch From Git to Jujutsu](https://etodd.io/2025/10/02/should-i-switch-from-git-to-jujutsu/)
+	  (mentioned in [Git Rev News Edition #129](https://git.github.io/rev_news/2025/11/30/edition-129/)) and
+	  [Switch to Jujutsu already: a tutorial](https://www.stavros.io/posts/switch-to-jujutsu-already-a-tutorial/)
+	  (mentioned in [Git Rev News Edition #128](https://git.github.io/rev_news/2025/10/31/edition-128/)).
++ [From Zero to GitHub: Starting A New jj (Jujutsu) Repo](https://www.visualmode.dev/from-zero-to-github-starting-a-new-jj-jujutsu-repo)
+  by Josh Branchaud on VisualMode.
++ [30 Years of `<br>` Tags](https://www.artmann.co/articles/30-years-of-br-tags):
+  Three decades of making things on the internet.
+  Includes the introduction of Git, GitHub, and the GitDevOps (push to publish) workflow.
+  Post by Christoffer Artmann on his blog.
++ [Free Software Needs Free Tools](https://mako.cc/writing/hill-free_tools.html)
+  by Benjamin Mako Hill (2010).
+
+
+__Easy watching__
+
++ [Magit, fzf, and ast-grep demo](https://www.saltycrane.com/blog/2025/12/magit-fzf-and-ast-grep-demo/)
+  by Eliot (@saltycrane) on SaltyCrane Blog.
+  The video [on YouTube](https://www.youtube.com/watch?v=W4eOz3L6Ga8)
+  is 12:40 minutes long.
++ [Git & GitHub Crash Course for Beginners](https://www.freecodecamp.org/news/git-and-github-crash-course-for-beginners/)
+  by Beau Carnes on freeCodeCamp.
+  The video [on YouTube](https://www.youtube.com/watch?v=mAFoROnOfHs)
+  by freeCodeCamp.org and logicBase Labs
+  is 1:21:19 hours long.
+
+
+__Git tools and sites__
+
++ [check-projects](https://github.com/uralys/check-projects)
+  is a fast, cross-platform CLI tool (with TUI interface)
+  to check the Git status of multiple projects organized by categories.
+  Written in Go, under MIT license.
++ [repos](https://github.com/epilande/repos)
+  is an interactive CLI tool for managing multiple Git repositories.
+  Written in TypeScript (with pre-built binaries), under MIT license.
++ [Patchy 🩹](https://github.com/richardgill/patchy)
+  is a CLI for generating and applying patches to Git repositories.
+    + Similar in a way to [Stacked Git](https://stacked-git.github.io/),
+	  StGit for short, first mentioned in [Git Rev News Edition #17](https://git.github.io/rev_news/2016/07/20/edition-17/), 
+	  to a lesser extent to [patchwork](http://jk.ozlabs.org/projects/patchwork/),
+	  first mentioned in [Git Rev News Edition #20](https://git.github.io/rev_news/2016/10/19/edition-20/),
+	  or to [git-revise](https://mystor.github.io/git-revise.html),
+	  first mentioned in [Git Rev News Edition #54](https://git.github.io/rev_news/2019/08/21/edition-54) - where
+	  you can find links to other similar tools.
++ [git-pw](https://patchwork.readthedocs.io/projects/git-pw/en/latest/usage.html)
+  is a tool for integrating Git with Patchwork.
+  Written in Python, under MIT license.
++ [git-forge](https://github.com/Leleat/git-forge)
+  is a simple CLI tool for basic interactions with issues and pull requests
+  across GitHub, GitLab, Gitea, and Forgejo.
+  (Re)Written in Rust, under MIT license.<br>
+  See also [git-forge: Faster Issues and PRs From Your Terminal](https://neverready.app/blog/2025/03-git-forge/)
+  blog post by Anh Tuan Le.
++ [gtr - Git Worktree Runner](https://github.com/coderabbitai/git-worktree-runner)
+  by the CodeRabbit team
+  is a portable, cross-platform CLI for managing Git worktrees with ease,
+  with editor and AI tool integration.
+  It automates per-branch worktree creation, configuration copying,
+  dependency installation, and workspace setup.
+  Written in Bash, under Apache 2.0 license.<br>
+  See also [A Better Way to Run Git Worktrees Finally!](https://dev.to/nemesiscodex/a-better-way-to-run-git-worktrees-finally-1lh9)
+  by Julio Daniel Reyes on DEV\.to,
+  with [video on YouTube](https://www.youtube.com/watch?v=r9uGLZ3AkWo) [5:52].
+    + There is also [Worktree Manager (wtm)](https://github.com/jarredkenny/worktree-manager)
+	  mentioned in [Git Rev News Edition #128](https://git.github.io/rev_news/2025/10/31/edition-128/), and
+	  [wtp (Worktree Plus)](https://github.com/satococoa/wtp)
+	  mentioned in [Git Rev News Edition #125](https://git.github.io/rev_news/2025/07/31/edition-125/).
++ [Git Pow](https://github.com/markrai/gitpow)
+  is an open-source, cross-platform Git client.
+  It implements conditional strategies to handle larger repositories,
+  showing image previews to visualize what changed,
+  and grouping commits by month/year, among other features.
+  Written in Rust and JavaScript using the [Tauri](https://tauri.app/) framework.
+  Under GNU GPL v3.0 license.
++ [Git Repository Squirrel 🐿️ (reposquirrel)](https://github.com/reposquirrel/reposquirrel)
+  is a comprehensive Git repository analytics tool
+  that provides detailed insights into developer contributions, subsystem ownership,
+  and codebase evolution over time.
+  Written in Python (using the Flask library) and JavaScript,
+  under [CC-BY-NC-SA 4.0 license](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+  [Demo](http://13.61.92.173:5555/) and Docker image available.
++ [Gitmal](https://github.com/antonmedv/gitmal)
+  is a static page generator for Git repositories.
+  Gitmal generates static HTML pages with files, commits, code highlighting, and Markdown rendering.
+  Written in Go, under MIT license.
++ [Git Rewind](https://github.com/mikelane/git-rewind)
+  is a GitHub App that provides Your GitHub year in review — with privacy-first,
+  read-only access (using fine-grained permissions).
+  Written in TypeScript, under MIT license.
+  Available at [git-rewind.vercel.app](https://git-rewind.vercel.app/).
++ [Critic](https://github.com/jensl/critic)
+  is a code review system.
+  It is a web application written in Python, tightly integrated with Git.
+  Under Apache 2.0 license.<br>
+  See also [Meet Critic: Code Inspection System in Opera Software](https://sudonull.com/post/135595)
+  on Sudo Null IT News.
++ [Buggy: Fast and simple bug tracker](https://git.dillo-browser.org/buggy/tree/README.md?h=main).
+  The buggy program compiles a set of issues written in Markdown into HTML pages
+  suitable to be read from a web browser. It is intended to be used
+  alongside a version control system (VCS) like Git to track changes in the issues.
+  Written in C, under MIT license.
++ [Today I Learned: Git](https://github.com/jbranchaud/til?tab=readme-ov-file#git)
+  by Josh Branchaud, under MIT license.
+
+
+## Releases
+
++ libgit2 [1.9.2](https://github.com/libgit2/libgit2/releases/tag/v1.9.2)
++ GitHub Enterprise [3.19.0](https://docs.github.com/enterprise-server@3.19/admin/release-notes#3.19.0),
+[3.18.3](https://docs.github.com/enterprise-server@3.18/admin/release-notes#3.18.3),
+[3.17.9](https://docs.github.com/enterprise-server@3.17/admin/release-notes#3.17.9),
+[3.16.12](https://docs.github.com/enterprise-server@3.16/admin/release-notes#3.16.12),
+[3.15.16](https://docs.github.com/enterprise-server@3.15/admin/release-notes#3.15.16),
+[3.14.21](https://docs.github.com/enterprise-server@3.14/admin/release-notes#3.14.21),
+[3.18.2](https://docs.github.com/enterprise-server@3.18/admin/release-notes#3.18.2),
+[3.17.8](https://docs.github.com/enterprise-server@3.17/admin/release-notes#3.17.8),
+[3.16.11](https://docs.github.com/enterprise-server@3.16/admin/release-notes#3.16.11),
+[3.15.15](https://docs.github.com/enterprise-server@3.15/admin/release-notes#3.15.15),
+[3.14.20](https://docs.github.com/enterprise-server@3.14/admin/release-notes#3.14.20)
++ GitLab [18.7](https://about.gitlab.com/releases/2025/12/18/gitlab-18-7-released/),
+[18.6.2, 18.5.4, 18.4.6](https://about.gitlab.com/releases/2025/12/10/patch-release-gitlab-18-6-2-released/)
++ GitKraken [11.7.0](https://help.gitkraken.com/gitkraken-desktop/current/)
++ Sourcetree [4.2.15](https://product-downloads.atlassian.com/software/sourcetree/ReleaseNotes/Sourcetree_4.2.15.html)
++ Garden [2.4.0](https://github.com/garden-rs/garden/releases/tag/v2.4.0),
+[2.5.0](https://github.com/garden-rs/garden/releases/tag/v2.5.0)
++ Git Cola [4.17.0](https://github.com/git-cola/git-cola/releases/tag/v4.17.0)
++ GitButler [0.18.3](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.18.3),
+[0.18.2](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.18.2)
++ Sublime Merge [Build 2121](https://www.sublimemerge.com/download)
++ Kinetic Merge [1.13.2](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.13.2),
+[1.13.1](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.13.1),
+[1.13.0](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.13.0),
+[1.12.2](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.12.2),
+[1.12.1](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.12.1),
+[1.12.0](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.12.0)
+
+## Credits
+
+This edition of Git Rev News was curated by
+Christian Couder &lt;<christian.couder@gmail.com>&gt;,
+Jakub Narębski &lt;<jnareb@gmail.com>&gt;,
+Markus Jansen &lt;<mja@jansen-preisler.de>&gt; and
+Kaartic Sivaraam &lt;<kaartic.sivaraam@gmail.com>&gt;
+with help from Lucas Seiki Oshiro and David Aguilar.

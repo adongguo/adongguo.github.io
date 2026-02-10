@@ -1,0 +1,475 @@
+---
+title: Git Rev News Edition 127 (September 30th, 2025)
+layout: default
+date: 2025-09-30 12:06:51 +0100
+author: chriscool
+categories: [news]
+navbar: false
+---
+
+## Git Rev News: Edition 127 (September 30th, 2025)
+
+Welcome to the 127th edition of [Git Rev News](https://git.github.io/rev_news/rev_news/),
+a digest of all things Git. For our goals, the archives, the way we work, and how to contribute or to
+subscribe, see [the Git Rev News page](https://git.github.io/rev_news/rev_news/) on [git.github.io](http://git.github.io).
+
+This edition covers what happened during the months of August and September 2025.
+
+## Discussions
+
+<!---
+### General
+-->
+
+<!---
+### Reviews
+-->
+
+### Support
+
+* [Doing blobless clone by default; switching between blobless, treeless and full clones by a command](https://lore.kernel.org/git/79ed51fbd94ec2793ab0388b33963b366e48c590.camel@aegee.org/)
+
+  Dilyan Palauzov (Дилян Палаузов) sent an email to the Git mailing
+  list where he proposed making blobless cloning
+  (`--filter=blob:none`) the default behavior for `git clone` via a
+  global configuration option. He also suggested adding a command to
+  download all locally missing history, a command to convert a
+  repository to a pure treeless or pure blobless clone, and a config
+  option to make blobless clone the default behavior when running just
+  `git clone <URL>`.
+
+  He said that most users used `git clone` to build or change software, not to
+  immediately analyze history with commands like `git log`. Therefore,
+  a reduced data download would speed up initialization, save
+  bandwidth, and reduce server load.
+
+  Kristoffer Haugsbakk replied saying the proposed command to
+  "download all locally missing history" for treeless and blobless
+  clones "sounds like git-backfill(1)". He also noted that he had
+  "never used blob/treeless" clones himself.
+
+  Derrick Stolee, who likes to be called just "Stolee", and who
+  contributed the `git backfill` command, replied to Kristoffer
+  confirming that `git backfill` is intended to assist with downloading
+  the missing blobs in a blobless partial clone.
+
+  About treeless clones though, he noted that `git backfill` is not
+  optimized for them, and that treeless clones are generally not
+  intended for "refilling," as downloading missing trees is
+  "particularly expensive".
+
+  Stolee suggested using `scalar clone`, which is already shipped with
+  Git, instead of making blobless cloning the default, as
+  `scalar clone` was contributed partly to allow users to opt into a
+  version of `git clone` that incorporates "best practices and
+  advanced features as they are developed", while `git clone`
+  maintains backward compatibility. He recognized that `scalar clone`
+  might not be "discoverable enough" though.
+
+  Junio Hamano replied to Stolee's suggestion that a future command
+  like `git big-clone` could emerge from the feedback on
+  `scalar clone`. He said a separate command like `git big-clone`
+  would not be discoverable enough either. Instead as a new feature
+  matures, it should be a welcome change for `git clone` to borrow it
+  as a new option. Such optimizations (like those for large repos)
+  could be automatically enabled based on the repository's size,
+  provided it was done with end-user consent.
+
+  Patrick Steinhardt replied to Stolee about treeless clones. He
+  agreed that the existing command `git backfill` is not optimized for
+  refilling treeless clones, and proposed an idea to backfill trees by
+  batching based on depth, but concluded that this method was
+  "definitely not ideal" and would perform "way worse compared to
+  backfilling blobs".
+
+  Patrick also said that for these reasons he generally recommends not
+  to use treeless clones at all.
+
+  Stolee replied to Patrick agreeing with the general caution
+  regarding treeless clones, and that they were "not a good approach
+  for doing ongoing work as a human".
+
+  However he noted that they are useful if a user needs the speed of a
+  shallow clone combined with the ability to analyze commit history
+  (though with no path history) for an "ephemeral scenario like a CI
+  build". But they are a "tool for a very narrow case" and should only
+  be used by those who understand how to avoid their pitfalls. Patrick
+  then agreed with that point of view.
+
+  Konstantin Ryabitsev, the system administrator for kernel.org,
+  replied to the original email from Dilyan about making blobless
+  clones the default behavior for `git clone`. He said a
+  counter-rationale to this proposal was that shallow clones (which
+  include blobless clones) generate significantly more load on the
+  server side.
+
+  The reason is that for these partial clones, no pre-existing packs
+  are available for the operation, requiring more computation from the
+  server. So changing the default behavior for `git clone` could
+  likely result in slower clones for everyone and lead to more
+  unavailable servers due to the high load.
+
+  Ben Knoble also replied to Dilyan's original email by opposing the
+  proposal to make blobless clones the default behavior while agreeing
+  that managing this preference via a config option was a reasonable
+  compromise.
+
+  Ben's opinion was that such a default behavior would defeat the
+  "tremendous advantage of distributed version control", which is about
+  having the whole repository available independently. It would also
+  make some of his use cases more difficult as he frequently clones
+  repositories specifically to run "history spelunking searches".
+
+  He noted that he primarily deals with repositories where the issue
+  isn't about clones, but about mismanaging large binary files in
+  history, which causes large blobs and clone times.
+
+## Developer Spotlight: Toon Claes
+
+* **Who are you and what do you do?**
+
+  I'm Toon from Belgium. My name is pronounced like "tone" (rhymes with
+  "bone"), and not like the "toon" in "cartoon", but usually I'm already
+  happy if people remember my name 😉.
+
+  I'm employed by GitLab for more than 8 years, and since late 2024 I've
+  been part of the Git team, contributing to the Git project. I've started
+  my professional career in 2008 building software for a payment terminal
+  running embedded GNU/Linux using C & C++. Later I've transitioned into
+  doing web and mobile development for a while. And now recently, I've
+  been circling back to more lower-level programming, contributing to Git
+  using C.
+
+* **What would you name your most important contribution to Git?**
+
+  I'm fairly new in the Git community, but recently I've been working on
+  adding [`git last-modified`(1)](https://git.github.io/htmldocs/git-last-modified.html).
+  It's a sub-command that will be released in Git v2.52. This command
+  finds the commit that last modified each path in a tree. It can
+  be used on forges (like GitLab, GitHub, Codeberg), to show commit
+  data in a tree view.
+
+* **What are you doing on the Git project these days, and why?**
+
+  The subcommand [`git last-modified`(1)](https://git.github.io/htmldocs/git-last-modified.html)
+  was recently merged in the 'master'. But there's more work to be
+  done to improve its performance.
+
+* **If you could get a team of expert developers to work full time on
+  something in Git for a full year, what would it be?**
+
+  Once data is committed to Git, and it's made part of the history (i.e.
+  committed or merged into the default branch), it's trapped forever. This
+  is a core principle of Git: you cannot rewrite history without changing
+  commit hashes. This is very powerful, but also problematic in some
+  scenarios.
+
+  For example, at my $DAYJOB we receive commonly the request from
+  customers to remove confidential or sensitive information from a Git
+  repository. This is not possible without rewriting history. Or when, by
+  accident, large files are committed to Git, you cannot get them out
+  (without rewriting history). Or people might want to remove/change
+  their personal information in a repository, for example when they
+  transition genders.
+
+  Can we (and should we?) build something that removes and overwrites
+  pieces of history, without changing commit hashes? It's a slippery
+  slope, because from experience I know Git users are very creative and
+  might use this feature in ways it was not intended for.
+
+* **If you could remove something from Git without worrying about
+  backwards compatibility, what would it be?**
+
+  The use of the double `..` and triple `...` dot notation in
+  [`gitrevisions(7)`](https://git-scm.com/docs/gitrevisions#_dotted_range_notations)
+  and `git diff(1)`. I even once ranted about it in [a video](https://www.youtube.com/watch?v=phThP8DwJVs).
+
+* **What is your favorite Git-related tool/library, outside of
+  Git itself?**
+
+  I'm a big fan of [Magit][1]. It's arguably the best tool to interact
+  with Git and I also learned a lot from it. I consider myself an
+  advanced Git user, but I wouldn't be able to split up changes in
+  several commits without [Magit][1].
+
+[1]: https://magit.vc/
+
+* **Do you happen to have any memorable experience w.r.t. contributing
+  to the Git project? If yes, could you share it with us?**
+
+  One of my earliest contributions to Git was a bug fix in the code used
+  by `git bundle create`. We noticed sometimes references didn't end up in
+  the bundle. After a lot of digging I submitted a patch that removed
+  about 30 lines of code written way back in 2007. The code from 2007
+  caused references to be skipped if they were modified while the
+  `git bundle create` process was running. But it wasn't needed anymore
+  due some changes made in 2013, although no one ever realized that.
+  You can read more about it [in the patch][2].
+
+  It was really satisfying to submit a patch that was nothing more than
+  code deletion of really old code (and adding some tests). And it taught
+  me to write a good commit message, which I was praised for by
+  [the maintainer][3]. It was a very nice experience as a newcomer in the
+  community.
+
+[2]: https://lore.kernel.org/git/20241211-fix-bundle-create-race-v3-1-0587f6f9db1b@iotcl.com/
+[3]: https://lore.kernel.org/git/xmqqzfl4l22t.fsf@gitster.g/
+
+* **What is your toolbox for interacting with the mailing list and for
+  development of Git?**
+
+  I mostly live in Emacs and my terminal (zsh). I consume email in Emacs
+  using [notmuch][4]. To submit patches I use [b4][5], which I also
+  sometimes use to pull in patches. But I also sometimes pull in
+  the branches from [Junio's fork][6] or the fork shared across
+  my colleagues.
+
+  In Git, I compile and unit test changes using Meson. Its use was
+  introduced in the Git project around the [end of 2024][7]. It's
+  reliable because it prevents me from forgetting to recompile
+  before running tests; it's fast because it parallelizes compilation
+  by default and automatically [uses Ccache][8]; it allows out-of-tree
+  builds, which is really convenient if you want to benchmark various
+  revisions of Git.
+
+[4]: https://notmuchmail.org/doc/latest/notmuch-emacs.html
+[5]: https://github.com/mricon/b4
+[6]: https://github.com/gitster/git
+[7]: https://lore.kernel.org/git/20241206-pks-meson-v11-0-525ed4792b88@pks.im/
+[8]: https://mesonbuild.com/Feature-autodetection.html#ccache
+
+* **What is your advice for people who want to start Git development?
+  Where and how should they start?**
+
+  Learn to navigate [the mailing list archive][9]. It lacks structure so
+  things can be hard to find, but there's so much information up there. If
+  you're interested in a topic, or you think you've found the bug, start digging.
+  Use [`git blame(1)`][10] to find the commit that introduced the changes
+  and look up the conversation around it in the mailing list archive.
+  This will help you understand why some decisions are made. Also it
+  familiarizes you with the people in the community, how they think,
+  how they communicate, and what's expected from you. Having the
+  knowledge from those conversations can help you build a strong case
+  whenever you're submitting a feature change or bug fix.
+
+[9]: https://lore.kernel.org/git
+[10]: https://git-scm.com/docs/git-blame
+
+
+## Other News
+
+__Various__
+
++ [What’s next for Git? 20 years in, the community is still pushing forward](https://github.blog/open-source/whats-next-for-git-20-years-in-the-community-is-still-pushing-forward/)
+  by Lee Reilly on GitHub Blog - mainly about
+  the [Git Merge 2025 talks lineup](https://git-merge.com/#speakers).
++ [Git Developers Debate Making Rust Mandatory](https://www.phoronix.com/news/Git-Weighs-Mandatory-Rust)
+  by Michael Larabel on Phoronix.
++ [A policy for `Link:` tags](https://lwn.net/Articles/1037069/) (for Linux),
+  by Jonathan Corbet on LWN\.net.
++ [Working almost continuously for six months](https://www.linkedin.com/feed/update/urn:li:activity:7378744230275350528/), Yasin Dehfuli completed the [Persian translation of the ProGit book](https://git-scm.com/book/fa/v2).
++ An initiative [to refresh the look and content of https://git-scm.com/](https://github.com/git/git-scm.com/issues/2046) has been kicked off by Toon Claes. Contributions welcome, especially from visual designers!
+
+
+__Light reading__
+
++ [git-flow-next: The Next Iteration of Advanced Git Workflows](https://www.git-tower.com/blog/git-flow-next)
+  by Bruno Brito on Tower Blog.
++ [A kludgy new way to git-blame](https://benknoble.github.io/blog/2025/09/17/blame/)
+  by D. Ben Knoble on his Junk Drawer personal blog,
+  about the new `git-greb` script that feeds `git grep` to `git blame`
+  (with appropriate options) in order to blame matching lines.
++ [My new git utility `what-changed-twice` needs a new name](https://blog.plover.com/2025/09/21/#what-changed-twice)
+  by Mark Dominus (陶敏修) on his The Universe of Discourse blog,
+  about the tool to help get related changes into the same commit.
++ [Supercharge your Git workflows](https://about.gitlab.com/blog/supercharge-your-git-workflows/)
+  by Darwin Sanoy on GitLab Blog, about how to
+  optimize `git clone` operations in any environment, reducing clone time and disk space,
+  with the [Git Much Faster](https://gitlab.com/gitlab-accelerates-embedded/misc/git-much-faster) script.
+    + Compare with [Scalar](https://github.com/microsoft/scalar),
+	  a tool that helps Git scale to handle large Git repositories
+	  by enabling some advanced Git features.
+	  Scalar was first mentioned in [Git Rev News Edition #60](https://git.github.io/rev_news/2020/02/19/edition-60/),
+	  and now is part of Git: [scalar - A tool for managing large Git repositories](https://git-scm.com/docs/scalar).
+	  [The Story of Scalar](https://github.blog/2022-10-13-the-story-of-scalar/)
+	  was mentioned in [Edition #92](https://git.github.io/rev_news/2022/10/26/edition-92/).
++ [The Origin Story of Merge Queues](https://mergify.com/blog/the-origin-story-of-merge-queues)
+  by Julien Danjou on Mergify Blog.
+  This article traces merge queues history
+  (from Bors and Homu to Bulldozer, Kodiak, Mergify, GitHub and GitLab),
+  why they emerged, and how they became a standard in modern software development.
+    + [Mergify.com](https://mergify.com/),
+	  a web service for automating pull requests (free for open-source projects),
+	  was mentioned in [Git Rev News Edition #87](https://git.github.io/rev_news/2022/05/26/edition-87/).
++ [Git - Fun Facts](https://dev.to/rubansi/git-fun-fact-45de)
+  by Rubansi Vincent on DEV\.to:
+  a mix of fun and surprising facts about Git.
++ [diff --stat for binary files (in the Jujutsu version control system)](https://neugierig.org/software/blog/2025/08/jj-binary-stat.html)
+  by Evan Martin on neugierig\.org: Tech Notes.
+    + [Jujutsu (`jj`)](https://jj-vcs.github.io/jj/) is a Git-compatible version control system
+	  written in Rust, first mentioned in
+	  [Git Rev News Edition #85](https://git.github.io/rev_news/2022/03/31/edition-85/).
++ [Jujutsu For Busy Devs, Part 2: "How Do I...?"](https://maddie.wtf/posts/2025-07-21-jujutsu-for-busy-devs/entry/1)
+  by Madeleine Mortensen, continues the [Jujutsu For Busy Devs](https://maddie.wtf/posts/2025-07-21-jujutsu-for-busy-devs)
+  series, mentioned in [Git Rev News Edition #125](https://git.github.io/rev_news/2025/07/31/edition-125/).
++ [Dear GitHub: no YAML anchors, please](https://blog.yossarian.net/2025/09/22/dear-github-no-yaml-anchors)
+  by William Woodruff (yossarian) on his ENOSUCHBLOG blog.
+  He says that they are redundant with existing functionality,
+  make CI/CD human and machine comprehension harder,
+  and their support in GitHub Actions does not introduce any new, previously unavailable features.
++ [Custom VC-Focused Emacs Functions I Created to Enhance My Git Workflow](https://www.rahuljuliato.com/posts/vc-git-functions)
+  by Rahul M. Juliato on Rahul's Blog.
++ [How to delete all squash-merged local git branches with one terminal command](https://whitep4nth3r.com/blog/how-to-delete-all-squash-merged-local-git-branches-with-one-terminal-command/)
+  (which you probably shouldn't use),
+  by Salma Alam-Naylor on her blog.
++ [finding deleted content using git logs](https://kjelsrud.dev/blog/finding-deleted-content-using-git-logs/)
+  by Sindre Kjelsrud, also known as “Sid”, on Sids' blog:
+  a short note on `git log -S`.
++ [Git exclude, a handy feature you might not know about](https://marijkeluttekes.dev/blog/articles/2025/09/03/git-exclude-a-handy-feature-you-might-not-know-about/)
+  by Marijke Luttekes on her blog, about `.git/info/exclude`.
++ [Git Dual Remotes](https://zanshin.net/2025/09/02/git-dual-remotes/):
+  a short note by Mark H. Nichols on his Zanshin.net personal site,
+  about the difference between `git push` and `git fetch` with multiple URLs,
+  and `jj git push --all-remotes`.
++ [Migrating from Gitea to Forgejo the long way](https://msfjarvis.dev/posts/migrating-from-gitea-to-forgejo-the-long-way/)
+  by Harsh Shandilya on his blog.<br>
+  [Gitea](https://about.gitea.com/) and [Forgejo](https://forgejo.org/) are software forges.
++ [Some thoughts on personal git hosting](https://shkspr.mobi/blog/2025/09/some-thoughts-on-personal-git-hosting/)
+  by Terence Eden on Terence Eden’s Blog.
++ [Setting up cgit with Caddy v2 web server](https://www.sixfoisneuf.fr/posts/setting-up-cgit-with-caddy2/)
+  by Simon Garrelou on his SixFoisNeuf blog (2022).
++ [Sourcegraph went dark](https://www.eric-fritz.com/articles/sourcegraph-went-dark/)
+  by Eric Fritz on his blog (2024),
+  about the work that went into ensuring that references are kept alive
+  after the `sourcegraph/sourcegraph` repository went private
+  (there is a public snapshot available at [sourcegraph/sourcegraph-public-snapshot](https://github.com/sourcegraph/sourcegraph-public-snapshot),
+  which is a read-only archived repository).
++ [How to use stacked PRs to unblock your entire team](https://graphite.dev/blog/stacked-prs)
+  by Ninad Pathak on Graphite Blog (2024), and<br>
+  [A guide to using Graphite's stacked PRs for GitHub users](https://dev.to/semgrep/a-guide-to-using-graphites-stacked-prs-for-github-users-5c47)
+  by Martin Jambon for Semgrep on DEV\.to.
+    + See also [Stacked Branches with GitButler](https://blog.gitbutler.com/stacked-branches-with-gitbutler/)
+	  by Scott Chacon on the GitButler Blog,
+	  mentioned in [Git Rev News Edition #118](https://git.github.io/rev_news/2024/12/31/edition-118/).
+    + See also [Understanding the Stacked Pull Requests Workflow](https://www.git-tower.com/blog/stacked-prs/) by Bruno Brito on Tower's blog,
+      mentioned in [Git Rev News Edition #111](https://git.github.io/rev_news/2024/05/31/edition-111/)
+      together with various other articles and tools about stacked diffs, stacked PRs, and stacked branches.
+    + See also [Rethinking code reviews with stacked PRs](https://www.aviator.co/blog/rethinking-code-reviews-with-stacked-prs/#)
+      by Ankit Jain on the Aviator blog,
+      mentioned in [Git Rev News Edition #115](https://git.github.io/rev_news/2024/09/30/edition-115/)
+      with links to more sites and tools related to stacked PRs, etc.
++ [GitButler's new patch based Code Review (Beta)](https://blog.gitbutler.com/gitbutlers-new-patch-based-code-review)
+  by Scott Chacon on GitButler's Blog.
++ [first-class merges and cover letters](https://dotat.at/@/2025-09-11-cover-letter.html)
+  by Tony Finch on his blog.
+
+
+__Slightly heavier reading__
+
++ [Quo Vadis, Code Review? Exploring the Future of Code Review](https://arxiv.org/abs/2508.06879),
+  a scientific article from August 2025, arXiv:2508.06879
+  (most authors of the paper are from Blekinge Institute of Technology, Karlskrona, Sweden).
++ [Code Review as Decision-Making -- Building a Cognitive Model from the Questions Asked During Code Review](https://arxiv.org/abs/2507.09637),
+  a scientific article from July 2025, arXiv:2507.09637
+  (all authors are from Lund University, Lund, Sweden).
+  Submitted to _Empirical Software Engineering_, Springer Nature.
+
+
+__Easy watching__
+
++ [Git Mini Summit 2025 Videos](https://blog.gitbutler.com/git-mini-summit-2025)
+  by Scott Chacon on GitButler's Blog.
++ Kinetic Merge in action
+    + [Merging through a file split](https://youtu.be/JHb9DKK0LIA)
+    + [Complex merge demonstration](https://youtu.be/6jry6NKxGJA)
+    + [Merging code embedded inside an if-statement](https://www.youtube.com/watch?v=sm4Naq_zJU0&t=2s)
++ [12 Git commands visualized in 3D: a spatial approach to understanding version control](https://www.youtube.com/watch?v=C2aFC8wFp2A)
+  [4:58], on the Initial Commit channel on YouTube.
++ [Stacked Branches With Lazygit](https://www.youtube.com/watch?v=M6S-9Y8peDY)
+  [12:18] by Jesse Duffield (Lazygit author) on YouTube.
+    + [lazygit](https://github.com/jesseduffield/lazygit) is a simple [windowed] terminal UI for Git,
+	  written in Go.  It was first mentioned in [Git Rev News Edition #42](https://git.github.io/rev_news/2018/08/22/edition-42/).
+
+
+__Git tools and sites__
+
++ [Kinetic Merge](https://github.com/sageserpent-open/kineticMerge)
+  is a command-line tool that helps you merge a heavily refactored codebase and stay sane.
+  Its goals are to:
+    + Merge two branches of a Git repository *holistically across the entire codebase*.
+    + Take into account the motion of code in either branch due to refactoring.
+    + Handle file renames, file splits, file concatenation.
+    + Handle code being excised from one place in a file and moved elsewhere in that file or to somewhere within another file, or hived off all by itself in its own new file.
+    + Work alongside the usual Git workflows, allowing ordinary Git merge to take over at the end if necessary.
+    + Be a simple command line tool that tries to do as much as it can without supervision, and with minimal supervision when complexities are encountered.
+  
+  Written in Scala, under an MIT license.
++ [Git Much Faster](https://gitlab.com/gitlab-accelerates-embedded/misc/git-much-faster)
+  is a comprehensive benchmarking tool for comparing different Git clone strategies,
+  especially for large repositories.
+  Written as a Bash shell script, under MIT license.
++ [_prek_](https://prek.j178.dev/) is a reimagined version of [pre-commit](https://pre-commit.com/), built in Rust.
+  It is a framework to run hooks written in many languages,
+  and it manages the language toolchain and dependencies for running the hooks.
+  prek is not production-ready yet: some subcommands and languages are not implemented.
+  Under MIT license.
+    + See also [Ready prek go!](https://hugovk.dev/blog/2025/ready-prek-go/)
+	  article by Hugo van Kemenade on his blog.
++ [git-sqlite](https://github.com/cannadayr/git-sqlite)
+  is a collection of shell scripts,
+  including a custom diff and merge driver for SQLite,
+  that allows a SQLite database to be tracked using the Git version control system.
+  Under MIT license.
+
++ [LearnGit.io](https://learngit.io/) teaches version control
+  using animated visualizations of Git internals—and is
+  [now free](https://learngit.io/posts/learngit-io-is-now-free-for-students) for students and teachers. 
+  Created by Jack Lot of [The Modern Coder](https://www.youtube.com/@themoderncoder) YouTube channel,
+  LearnGit offers 41 video lessons across 11 modules, along with quizzes,
+  a Git command search, and high-quality written documentation.
+  Educators can email jack@learngit.io for bulk vouchers.
+  First mentioned in [Git Rev News Edition #108](https://git.github.io/rev_news/2024/02/29/edition-108/).
++ [GitFichas](https://gitfichas.com/en) (also know as GitStudyCards)
+  is a collection of study cards about Git,
+  for devs that might need a refresher about Git commands.
+  GitFichas is now [open-source](https://github.com/jtemporal/gitfichas)
+  and undergoing some construction.
++ Git's home page now has a [Learn](https://git-scm.com/learn) section, including [a handy Git Cheat Sheet](https://git-scm.com/cheat-sheet), contributed by the ever-industrious
+  [Julia Evans](https://jvns.ca/). These contributions are part of [the initiative to refresh the look and contents of git-scm.com](https://github.com/git/git-scm.com/issues/2046).
+
+
+## Releases
+
++ Git for Windows [v2.51.0(2)](https://github.com/git-for-windows/git/releases/tag/v2.51.0.windows.2)
++ Gerrit Code Review [3.13.0-rc0](https://www.gerritcodereview.com/3.13.html#3130)
++ Bitbucket Data Center [10.0](https://confluence.atlassian.com/bitbucketserver/release-notes-872139866.html)
++ GitHub Enterprise [3.17.6](https://docs.github.com/enterprise-server@3.17/admin/release-notes#3.17.6),
+[3.16.9](https://docs.github.com/enterprise-server@3.16/admin/release-notes#3.16.9),
+[3.15.13](https://docs.github.com/enterprise-server@3.15/admin/release-notes#3.15.13),
+[3.14.18](https://docs.github.com/enterprise-server@3.14/admin/release-notes#3.14.18)
++ GitLab [18.4.1, 18.3.3, 18.2.7](https://about.gitlab.com/releases/2025/09/25/patch-release-gitlab-18-4-1-released/),
+[18.4](https://about.gitlab.com/releases/2025/09/18/gitlab-18-4-released/),
+[18.3.2, 18.2.6, 18.1.6](https://about.gitlab.com/releases/2025/09/10/patch-release-gitlab-18-3-2-released/)
++ GitKraken [11.4.0](https://help.gitkraken.com/gitkraken-desktop/current/)
++ Sourcetree [4.2.14](https://product-downloads.atlassian.com/software/sourcetree/ReleaseNotes/Sourcetree_4.2.14.html)
++ tig [2.6.0](https://github.com/jonas/tig/releases/tag/tig-2.6.0)
++ Garden [2.3.0](https://github.com/garden-rs/garden/releases/tag/v2.3.0)
++ Git Cola [4.15.0](https://github.com/git-cola/git-cola/releases/tag/v4.15.0)
++ GitButler [0.16.8](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.16.8),
+[0.16.7](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.16.7)
++ Kinetic Merge [1.9.0](https://github.com/sageserpent-open/kineticMerge/releases/tag/v1.9.0)
++ git-credential-oauth [0.16.0](https://github.com/hickford/git-credential-oauth/releases/tag/v0.16.0)
++ Tower for Mac [14.4, 14.5](https://www.git-tower.com/release-notes/mac) 
++ git-flow-next [0.1](https://git-flow.sh/)
+
+
+## Credits
+
+This edition of Git Rev News was curated by
+Christian Couder &lt;<christian.couder@gmail.com>&gt;,
+Jakub Narębski &lt;<jnareb@gmail.com>&gt;,
+Markus Jansen &lt;<mja@jansen-preisler.de>&gt; and
+Kaartic Sivaraam &lt;<kaartic.sivaraam@gmail.com>&gt;
+with help from Toon Claes, Johannes Schindelin,
+Bruno Brito, Gerard Murphy, Jack Lot, Ben Knoble
+and Štěpán Němec.

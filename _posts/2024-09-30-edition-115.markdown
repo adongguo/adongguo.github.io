@@ -1,0 +1,454 @@
+---
+title: Git Rev News Edition 115 (September 30th, 2024)
+layout: default
+date: 2024-09-30 12:06:51 +0100
+author: chriscool
+categories: [news]
+navbar: false
+---
+
+## Git Rev News: Edition 115 (September 30th, 2024)
+
+Welcome to the 115th edition of [Git Rev News](https://git.github.io/rev_news/rev_news/),
+a digest of all things Git. For our goals, the archives, the way we work, and how to contribute or to
+subscribe, see [the Git Rev News page](https://git.github.io/rev_news/rev_news/) on [git.github.io](http://git.github.io).
+
+This edition covers what happened during the months of August and September 2024.
+
+## Discussions
+
+### General
+
+* [Git Merge 2024 conference](https://git-merge.com/) and [Contributor's Summit 2024](https://lore.kernel.org/git/Zu2DmS30E0kKug2a@nand.local/)
+
+  The Git Merge conference happened on
+  [September 19th and 20th](https://github.com/git/git-merge) in
+  Berlin, hosted by [GitButler](https://gitbutler.com/) and
+  [GitHub](https://github.com/).
+
+  The first day consisted of
+  [talks](https://github.com/git/git-merge#day-one-talks) and an
+  afterparty in the evening sponsored by
+  [GerritForge](https://www.gerritforge.com/).
+
+  On the [second day](https://github.com/git/git-merge?tab=readme-ov-file#day-two-unconference),
+  there was [the Contributor's Summit](https://lore.kernel.org/git/Zu2DmS30E0kKug2a@nand.local/) in parallel
+  with [breakout unconference sessions](https://github.com/git/git-merge/tree/main/breakouts).
+
+* [Git participated in GSoC (Google Summer of Code) 2024](https://summerofcode.withgoogle.com/programs/2024/organizations/git)
+
+  All the contributors have successfully passed their final evaluation
+  and published a final report:
+
+  - Jialuo She [worked](https://luolibrary.com/) on the
+    [Implement consistency check for refs](https://summerofcode.withgoogle.com/programs/2024/projects/ukm4PTEF)
+    project. He was mentored by Karthik Nayak and Patrick Steinhardt. The final
+    report can be found on
+	[his website](https://luolibrary.com/2024/08/25/GSoC-Final-Report/).
+
+  - Chandra Pratap [worked](https://chand-ra.github.io/) on the
+    [Move and improve reftable tests in the unit testing framework](https://summerofcode.withgoogle.com/programs/2024/projects/tlh611d7)
+    project. He was mentored by Patrick Steinhardt and Christian Couder. The final
+    report can be found on
+	[his website](https://chand-ra.github.io/2024/08/24/GSoC-Final-Report.html).
+
+  - Ghanshyam Thakkar [worked](https://spectre10.github.io/posts/) on the
+    [Move existing tests to a unit testing framework](https://summerofcode.withgoogle.com/programs/2024/projects/e9C4rhrv)
+    project. He was mentored by Christian Couder and Kaartic Sivaraam. The final
+    report can be found on [his website](https://spectre10.github.io/posts/gsoc_final_report/).
+
+  Congratulations to the contributors and their mentors!
+
+* Git will [participate in the next Outreachy round](https://www.outreachy.org/communities/cfp/git/)
+
+  Git applied to participate in the next
+  [Outreachy](https://www.outreachy.org/) round from December 2024 to
+  March 2025 and was accepted.
+  [Two projects](https://www.outreachy.org/apply/project-selection/#git)
+  are proposed:
+
+   - "Convert unit tests to use the clar testing framework" which will
+     be mentored by Patrick Steinhardt and Phillip Wood.
+
+   - "Finish adding a 'os-version' capability to Git protocol v2"
+     which will be mentored by Christian Couder.
+
+  See this [Outreachy webpage](https://www.outreachy.org/docs/applicant/)
+  for more information about the application process for contributors.
+
+### Reviews
+
+* [[PATCH] tests: drop use of 'tee' that hides exit status](https://lore.kernel.org/git/xmqq4j7uhfvm.fsf@gitster.g/)
+
+  Junio Hamano, the Git maintainer, sent a patch removing uses of the
+  `tee` command from test scripts.
+  [tee(1)](https://en.wikipedia.org/wiki/Tee_(command)) is a shell
+  command that duplicates its input to both its output and to one or
+  more files. The issue was that in some test scripts it was used
+  after a [pipe](https://en.wikipedia.org/wiki/Pipeline_(Unix)) to
+  directly duplicate the output of a Git command, so using a format
+  like:
+
+  `git COMMAND OPTIONS... | tee FILE...`
+
+  However, it's not a good idea to use a pipe after a Git command because
+  pipes discard the exit code of the command before them, so the
+  standard (Unix) shell behaviour is that the exit code of the whole
+  sequence is simply the exit code of the last command of a pipe sequence,
+  here `tee`. In Git tests though, we wouldn't want a test
+  to pass if the Git command fails when it should succeed.
+
+  \[For shell intimates: there are ways to override this default behaviour,
+  such as [the `pipefail` option](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/V3_chap02.html#tag_19_09_02),
+  or [named pipes](https://en.wikipedia.org/wiki/Named_pipe), but
+  there are a number of reasons, like shell portability and making
+  it easy to understand small parts of the code, why Git developers
+  try to avoid using those features in the Git codebase.\]
+
+  As there was no reason to hide the exit code of the Git commands in
+  the tests that used `tee`, Junio's patch basically just replaced
+  `| tee` with a simple `>`
+  [redirection](https://en.wikipedia.org/wiki/Redirection_(computing)).
+
+  Rubén Justo replied to Junio suggesting a wording improvement in the
+  commit message, but otherwise agreeing with the patch.
+
+  Johannes Schindelin, alias Dscho, also replied to Junio saying that
+  having something that duplicates the output of the Git command to
+  standard output could still be useful for debugging, especially when
+  dealing with CI failures. He showed an implementation of a
+  `redirect_and_show()` helper function that could perhaps be used
+  instead of `tee`, but agreed that it might be overkill and hoped that
+  having more unit tests written in C could help.
+
+  Jeff King, alias Peff, replied to Dscho saying that a better help
+  for debugging CI failures might be to have a way to automatically
+  save the state of the test directory, called
+  `trash directory.tXXXX-YYYY` where `tXXXX-YYYY` is related to the
+  name of the test script.
+
+  Junio also replied to Dscho saying that a simple `cat FILE`
+  instruction could be added after the lines where `| tee` was
+  replaced with a redirection to make sure the Git command output
+  appeared on standard output. Junio also agreed with Peff that saving
+  the state of test directories would be best to debug CI failures.
+
+  A version of Junio's patch taking into account the wording
+  improvement suggested by Rubén was eventually merged.
+
+<!---
+### Support
+-->
+
+## Developer Spotlight: Jialuo She
+
+_Editor's note: We're starting a new initiative in Git Rev News where
+ we interview recent GSoC/Outreachy students to get their reflections
+ on completing their projects. Feel free to share any thoughts or
+ feedback you might have!_
+
+* Who are you and what do you do?
+
+  My name is Jialuo She. I find it quite challenging to select an English
+  name for myself, so I decide to leave it as is. However, you can simply
+  call me "Luo(/lwɔː/)". I am currently employed at NVIDIA as a Tegra
+  System Architect. In this role, I am responsible for developing the
+  verification infrastructure for complex full-chip features, such as
+  CPU-GPU cache coherency. So my daily job is unrelated to Git. In my
+  spare time, I continue my GSoC work to
+  [implement consistency checks for refs](https://summerofcode.withgoogle.com/programs/2024/projects/ukm4PTEF).
+
+* How did you initially become interested in contributing to Git,
+  and what motivated you to choose it as your GSoC project?
+
+  When I was a student, I read [the book "Pro Git"](https://git-scm.com/book/en/v2)
+  to learn how to use Git in my daily development process. One day, I
+  found [a tutorial](https://www.leshenko.net/p/ugit/) that teaches
+  how to write a mini Git step by step, and I really appreciated the
+  design of Git.
+
+  As I was approaching my graduate school graduation, I hoped to use the
+  opportunity provided by GSoC to do something meaningful for the long
+  term. Since I felt that I had an understanding of Git's internal
+  principles, believing that my chances of being selected would be much
+  higher. When I saw the "Implement consistency check for refs" project,
+  I became very interested and resolutely chose Git.
+
+* How do you balance your contributions with other responsibilities
+  like work or school?
+
+  As a newcomer, contributing to Git can be particularly time-consuming
+  due to unfamiliarity with the overall codebase. I would dedicate an
+  evening to responding to review feedback, which forces me to think
+  about how to make improvements, and then I would code over the weekend.
+  Of course, if there were urgent situations at work or life, I would have
+  to postpone my contributions to Git. I feel there's no need to think
+  about balancing because it happens naturally.
+
+* What was your biggest takeaway or learning from GSoC that you now
+  apply regularly in your work?
+
+  After participating in GSoC, I begin to consider whether my commit
+  sequence is clear and understandable when writing code at work. I also
+  become more stringent with myself regarding commit messages, ensuring
+  they clearly explain the background, motivation, and implementation
+  details.
+
+* What was the biggest challenge you faced during your contributions
+  to Git, and how did you overcome it?
+
+  When building the ref consistency check infrastructure, I encountered
+  an exceptionally long review process that lasted about three months.
+  It was quite frustrating because there was no positive feedback compared
+  with other participants. Then I reflected on myself, wondering why I
+  was always comparing myself to others instead of focusing on what I was
+  doing. So, I adjusted my mindset.
+
+* Have you thought about mentoring new GSoC students?
+
+  If I have the opportunity and time, I would definitely mentor GSoC
+  students. I am very grateful to my mentors, Patrick and Karthik, for
+  introducing me to the Git community and enabling me to continue
+  contributing after completing GSoC. I hope that one day I can also
+  ignite the passion in others.
+
+* If you could remove something from Git without worrying about
+  backwards compatibility, what would it be?
+
+  The write and read support for symlink symrefs.
+
+* What is your favorite Git-related tool/library, outside of Git
+  itself?
+
+  I very much like the [GitLens tool](https://gitlens.amod.io/) when using
+  VSCode. By using this tool, I hardly use the bare `git blame` command.
+
+* What is your toolbox for interacting with the mailing list and for
+  development of Git?
+
+  When reviewing patches, I will firstly use [`b4`](https://b4.docs.kernel.org/en/latest/)
+  or simply fetch the branch stored in Junio's tree, and then I will
+  see the diffs just in the VSCode. To reply to a patch, I download the
+  raw email and use [`mutt`](http://www.mutt.org/) to write contents.
+  When sending patches, I still use `mutt` to make the environment as
+  simple as possible to improve efficiency.
+
+  I develop Git using VSCode and the [clangd](https://clangd.llvm.org/)
+  language server. I generate the `compile_commands.json` file using
+  `compiledb make`. I believe this is one of the best development
+  approaches available today, offering excellent code suggestions,
+  completions, and static analysis.
+
+* How do you envision your own involvement with Git or other open
+  source projects in the future?
+
+  I hope to complete the implementation of all ref consistency checks.
+  Additionally, I aim to further familiarize myself with the Git codebase
+  related to refs, follow the development of the reftable backend, and
+  participate in more reviews.
+
+* What is your advice for people who want to start Git development?
+  Where and how should they start?
+
+  In my opinion, the barrier to starting contributions to Git is relatively
+  high because Git doesn't have something like "good first issue" labels.
+  Therefore, I believe the best approach is to participate in mentoring
+  programs or continue work from certain mentoring programs as a student.
+
+* Would you recommend other students or contributors to participate in
+  the GSoC, or other mentoring programs, working on Git? Why? Do you
+  have advice for them?
+
+  I highly recommend that students integrate into the Git community
+  through mentoring programs. These programs provide basic ideas to help you
+  get started and contribute to Git. Working on Git is an amazing experience,
+  allowing you to be guided by many experienced contributors, improve your
+  code quality standards, and enhance your communication skills.
+
+  As for advice to participants, I believe the most important thing is not to
+  think of the project merely as a resume booster. Instead, let your passion
+  shine through and stay at the community after mentoring programs.
+
+
+## Other News
+
+__Various__
++ [Radicle 1.0](https://radicle.xyz/2024/09/10/radicle-1.0.html).<br>
+  Radicle is a peer-to-peer, local-first code collaboration stack built on Git.
+  [Radicle](https://radicle.xyz/) was first mentioned in
+  [Git Rev News Edition #49](https://git.github.io/rev_news/2019/03/20/edition-49/),
+  then in [Edition #70](https://git.github.io/rev_news/2020/12/26/edition-70/),
+  [#86](https://git.github.io/rev_news/2022/04/30/edition-86/),
+  and [#110](https://git.github.io/rev_news/2024/04/30/edition-110/) - where one
+  can find similar and related tools.
++ [git-scm.com is now a static website](https://lore.kernel.org/all/ZvrNmsycmamx2dcR@nand.local/t/#m72b3c0f77102fe9964e77d6c10d9166485e13c0e)
+  by Johannes Schindelin on the Git mailing list.<br>
+  Moving git.github.io, Git Developer Pages and Git Rev News' website
+  into git-scm.com is discussed in [GitHub issue #729](https://github.com/git/git.github.io/issues/729).
+
+__Light reading__
++ [Why GitHub Actually Won](https://blog.gitbutler.com/why-github-actually-won/):
+  How GitHub _actually_ became the dominant force it is today, from one of its cofounders.
+  Written by Scott Chacon on GitButler Blog.<br>
+  Nice companion to various articles on Git history, like the latest
+  [A Git story: Not so fun this time](https://git.github.io/rev_news/2024/07/31/edition-113/)
+  in [Git Rev News #113](https://git.github.io/rev_news/2024/07/31/edition-113/) - in #113 you
+  can also find links to other editions with links to other retellings of the Git history.
++ [Rethinking code reviews with stacked PRs](https://www.aviator.co/blog/rethinking-code-reviews-with-stacked-prs/#)
+  on Aviator blog by Ankit Jain (also available [on DEV\.to](https://dev.to/dphenomenal/rethinking-code-reviews-with-stacked-prs-3dih),
+  published by Ibrahim Salami.  Aviator provides [`av`](https://github.com/aviator-co/av), a CLI tool
+  to help with managing stacked PRs on GitHub.
+    + Stacked Pull Requests, also under the name Stacked Diffs,
+      were most recently mentioned in
+      [Git Rev News Edition #111](https://git.github.io/rev_news/2024/05/31/edition-111/),
+      where you can find links to other editions with other articles, and to related tools.
+    + See also [Stacked PRs CLI Product Comparison (Public)](https://docs.google.com/spreadsheets/d/1riYPbdprf6E3QP1wX1BeASn2g8FKBgbJlrnKmwfU3YE/edit?gid=0#gid=0)
+      Google Sheet spreadsheet.
+    + Contrast [Patterns for Managing Source Code Branches](https://martinfowler.com/articles/branching-patterns.html),
+      which strongly recommends patterns that are best suited to Continuous Integration,
+      first mentioned in [Git Rev News Edition #63](https://git.github.io/rev_news/2020/05/28/edition-63/),
+      and [Ship / Show / Ask: A modern branching strategy](https://martinfowler.com/articles/ship-show-ask.html),
+      mentioned in [Edition #79](https://git.github.io/rev_news/2021/09/30/edition-79/).
++ [Git With Python HowTo: GitPython Tutorial And PyGit2 Tutorial](https://grimoire.carcano.ch/blog/git-with-python-howto-gitpython-tutorial-and-pygit2-tutorial/)
+  by Marco Antonio Carcano on his blog 'The grimoire of a modern Linux professional'.
++ [Beyond “Commit” and “Push”: 5 Advanced Git Features You Should Know](https://www.git-tower.com/blog/5-advanced-git-features)
+  by Bruno Brito on GitTower Blog.
+  Covers git-bisect, git-rerere, gitattributes, git-notes, and git-worktree.
++ [Mastering Tower (Windows Edition)](https://www.git-tower.com/blog/mastering-tower-windows)
+  and [Mastering Tower (Mac Edition)](https://www.git-tower.com/blog/mastering-tower/)
+  by Bruno Brito on GitTower Blog.  Tower is a proprietary Git client for Mac and Windows,
+  with 30-day free trial.
++ [Git bisect run techniques](https://paperless.blog/git-bisect-run-techniques)
+  by Victor Engmark on paperless\.blog.
++ [Semantic Versioning with GitVersion (GitFlow)](https://blog.raulnq.com/semantic-versioning-with-gitversion-gitflow)
+  by Raul Naupari on his blog; Featured on daily\.dev, also available
+  [on DEV\.to](https://dev.to/raulnq/semantic-versioning-with-gitversion-gitflow-1gb4).
++ [Host your own Radicle seed node](https://edzz.de/posts/host-your-own-radicle-seed-node/)
+  by Eduard on Ed's Site.  Also available [on DEV\.to](https://dev.to/viiik/how-to-host-your-own-radicle-node-contribute-to-decentralized-source-control-5cgm).
++ [Creating a Git commit: The Hard Way](https://avestura.dev/blog/creating-a-git-commit-the-hard-way)
+  (with low-level plumbing commands) by Aryan Ebrahimpour
+  on Avestura's Personal Website.
++ [My Git cheatsheet](https://write.as/pylapp/my-git-cheatsheet) - a list
+  of some useful commands, as a cheatsheet or a simple reminder to keep and share.
+  Written by Pierre-Yves Lapersonne on his French and English pylapp blog in the fediverse (write\.as).
+
+
+<!---
+__Easy watching__
+-->
+
+__Git tools and sites__
++ [b4](https://github.com/mricon/b4) is a tool created to make it easier
+  for project developers and maintainers to use a distributed development
+  workflow that relies on patches, e-mail and distribution lists for code
+  contributions and review (like those used in Linux kernel development).
+  This tool was first mentioned in [Git Rev News Edition #61](https://git.github.io/rev_news/2020/03/25/edition-61/);
+  you can find links to various articles and posts about this tool
+  in [Edition #61](https://git.github.io/rev_news/2020/03/25/edition-61/),
+  [#91](https://git.github.io/rev_news/2022/09/30/edition-91/),
+  [#95](https://git.github.io/rev_news/2023/01/31/edition-95/),
+  [#107](https://git.github.io/rev_news/2024/01/31/edition-107/) and
+  [#109](https://git.github.io/rev_news/2024/03/31/edition-109/).
+  Written in Python, under GPL-2.0 license.
++ [Phabricator.KDE.org](http://phabricator.kde.org/) is KDE's desktop environment task management system.
+  It was used for patch review and other functions in the past, but KDE has since transitioned to GitLab,
+  at <https://invent.kde.org>. Bug tracking is done using <https://bugs.kde.org>.
+  Phabricator is still used for task tracking by KDE until this functionality is migrated to GitLab.
+    + [Phabricator](https://www.phacility.com/phabricator/) is/was a suite
+      of web-based development collaboration tools, which includes a code review tool called Differential,
+      a repository browser called Diffusion, a change monitoring tool called Herald,
+      a bug tracker called Maniphest, and a wiki called Phriction.<br>
+      Phabricator is [no longer actively maintained](https://admin.phacility.com/phame/post/view/11/phacility_is_winding_down_operations/)
+      by Phacility since June 1, 2021.  This tool was mentioned
+      in [Git Rev News Edition #13](https://git.github.io/rev_news/2016/03/16/edition-13/).
+      Written in PHP, under Apache 2.0 license.
+    + [Phorge](https://we.phorge.it/) is a community-maintained fork of Phabricator,
+      public [since Sep 7, 2022](https://we.phorge.it/phame/post/view/1/going_public/).
+      It seems to be actively developed.
++ [nb-clean](https://github.com/srstevenson/nb-clean) cleans Jupyter notebooks
+  of cell execution counts, metadata, outputs, and (optionally) empty cells,
+  preparing them for committing to version control.
+  Written in Python, under short ISC license.
++ [av](https://github.com/aviator-co/av) (Aviator) is a command-line tool
+  that helps you manage your stacked PRs on GitHub.
+  Written in Go, under MIT license.
++ [Stacked PRs CLI Product Comparison (Public)](https://docs.google.com/spreadsheets/d/1riYPbdprf6E3QP1wX1BeASn2g8FKBgbJlrnKmwfU3YE/edit?gid=0#gid=0)
+  is a Google Sheet spreadsheet by Aviator, listing various stacked PR/stacked diff tools:
+    + [ghstack](https://github.com/ezyang/ghstack) in Python,
+    + [gh-stack](https://github.com/timothyandrew/gh-stack) in Rust - no longer developed,
+    + [git-branchless](https://github.com/arxanas/git-branchless) in Rust
+      (mentioned in [Git Rev News Edition #76](https://git.github.io/rev_news/2021/06/27/edition-76/),
+      [#90](https://git.github.io/rev_news/2022/08/31/edition-90/),
+      [#93](https://git.github.io/rev_news/2022/11/30/edition-93/),
+      [#98](https://git.github.io/rev_news/2023/04/30/edition-98/),
+      and [#106](https://git.github.io/rev_news/2023/12/31/edition-106/)),
+    + [git-branchstack](https://github.com/krobelus/git-branchstack) in Python,
+    + [git-chain](https://github.com/dashed/git-chain) in Rust,
+    + [git-machete](https://github.com/VirtusLab/git-machete) in Python
+      - also available as a [plugin](https://github.com/VirtusLab/git-machete-intellij-plugin)
+      for the IntelliJ Platform products,
+    + [git-ps-rs - Git Patch Stack](https://github.com/drewdeponte/git-ps-rs) in Rust,
+    + [git-series](https://github.com/git-series/git-series) in Rust
+      (first mentioned in [Git Rev News Edition #18](https://git.github.io/rev_news/2016/08/17/edition-18/),
+      with a link to the presentation in [#19](https://git.github.io/rev_news/2016/09/14/edition-19/)),
+    + [git-stack](https://github.com/gitext-rs/git-stack) in Rust,
+    + [graphite-desktop](https://github.com/withgraphite/graphite-desktop)
+      (formerly [graphite-cli](https://github.com/withgraphite/graphite-cli))
+      in JavaScript/TypeScript - no longer actively developed,
+    + [Sapling SCM](https://github.com/facebook/sapling) Git-compatible source control system
+      by Facebook (mentioned in [Git Rev News Edition #93](https://git.github.io/rev_news/2022/11/30/edition-93/)),
+    + [spr](https://github.com/ejoffe/spr) - Stacked Pull Requests on GitHub, in Go,
+    + [Stacked Git (StGit)](https://stacked-git.github.io/) in Rust
+      (mentioned in Git Rev News Edition [#17](https://git.github.io/rev_news/2016/07/20/edition-17/),
+      [#21](https://git.github.io/rev_news/2016/11/16/edition-21/),
+      and [#74](https://git.github.io/rev_news/2021/04/30/edition-74/),
+      and finally presented as a tool in [#93](https://git.github.io/rev_news/2022/11/30/edition-93/)).
++ [degit](https://github.com/Rich-Harris/degit) is a CLI tool
+  that makes copies of Git repositories faster than ordinary `git clone`.
+  Supports GitHub, GitLab, Bitbucket, and Sourcehut (sr\.ht).
+  Written in JavaScript for Node.js, under MIT license.
++ [GitVersion](https://gitversion.net/) is a tool that generates
+  a [Semantic Version](https://semver.org/) number based on your Git history.
+  Available as Continuous Server pipeline, CLI tool, MSBuild task, and software library.
+  Written in C#, under MIT license.  Works on Windows, Linux, and Mac.
++ [ugit: DIY Git in Python](https://www.leshenko.net/p/ugit/) is a tutorial on Git internals,
+  where you learn about how Git works on the inside by trying to implement
+  (micro) Git in Python.
+
+
+## Releases
+
++ Git [2.47.0-rc0](https://public-inbox.org/git/xmqqv7yijq33.fsf@gitster.g/),
+[2.46.2](https://public-inbox.org/git/xmqqa5fyytg0.fsf@gitster.g/),
+[2.46.1](https://public-inbox.org/git/xmqqikuytbxd.fsf@gitster.g/)
++ Git for Windows [2.47.0-rc0(1)](https://github.com/git-for-windows/git/releases/tag/v2.47.0-rc0.windows.1),
+[2.46.2(1)](https://github.com/git-for-windows/git/releases/tag/v2.46.2.windows.1),
+[2.46.1(1)](https://github.com/git-for-windows/git/releases/tag/v2.46.1.windows.1)
++ GitHub Enterprise [3.14.1](https://help.github.com/enterprise-server@3.14/admin/release-notes#3.14.1),
+[3.13.4](https://help.github.com/enterprise-server@3.13/admin/release-notes#3.13.4),
+[3.12.9](https://help.github.com/enterprise-server@3.12/admin/release-notes#3.12.9),
+[3.11.15](https://help.github.com/enterprise-server@3.11/admin/release-notes#3.11.15),
+[3.10.17](https://help.github.com/enterprise-server@3.10/admin/release-notes#3.10.17)
++ GitLab [16.10.10, 16.9.11, 16.8.10, 16.7.10, 16.6.10, 16.5.10, 16.4.7, 16.3.9, 16.2.11, 16.1.8, 16.0.10](https://about.gitlab.com/releases/2024/09/25/patch-release-gitlab-16-10-10-released/),
+[17.4.1, 17.3.4, 17.2.8](https://about.gitlab.com/releases/2024/09/25/patch-release-gitlab-17-4-1-released/),
+[17.4](https://about.gitlab.com/releases/2024/09/19/gitlab-17-4-released/),
+[17.3.3, 17.2.7, 17.1.8, 17.0.8, 16.11.10](https://about.gitlab.com/releases/2024/09/17/patch-release-gitlab-17-3-3-released/),
+[16.11.9](https://about.gitlab.com/releases/2024/09/11/gitlab-16-11-9-released/),
+[17.0.7](https://about.gitlab.com/releases/2024/09/11/gitlab-17-0-7-released/),
+[17.3.2, 17.2.5, 17.1.7](https://about.gitlab.com/releases/2024/09/11/patch-release-gitlab-17-3-2-released/)
++ GitKraken [10.3.0](https://help.gitkraken.com/gitkraken-client/current/)
++ GitHub Desktop [3.4.5](https://desktop.github.com/release-notes/),
+[3.4.4](https://desktop.github.com/release-notes/)
++ Garden [1.8.0](https://github.com/garden-rs/garden/releases/tag/v1.8.0)
++ Git Cola [4.8.2](https://github.com/git-cola/git-cola/releases/tag/v4.8.2)
++ GitButler [0.12.26](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.12.26),
+[0.12.25](https://github.com/gitbutlerapp/gitbutler/releases/tag/release/0.12.25)
+
+## Credits
+
+This edition of Git Rev News was curated by
+Christian Couder &lt;<christian.couder@gmail.com>&gt;,
+Jakub Narębski &lt;<jnareb@gmail.com>&gt;,
+Markus Jansen &lt;<mja@jansen-preisler.de>&gt; and
+Kaartic Sivaraam &lt;<kaartic.sivaraam@gmail.com>&gt;
+with help from Jialuo She, Josh Steadmon and Štěpán Němec.
