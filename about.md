@@ -1,19 +1,26 @@
-# 关于我
+# 关于 Dirty Hands
 
-👋 Hi，我是 **Adongguo**。
+> "Clean hands do nothing. Dirty hands change everything."
 
-专注于 DevOps 效能洞察与 AI 智能化方向，热爱开源。
+## 我们是谁
 
-## 技术兴趣
+**Dirty Hands**（脏手团队）— 一群不怕弄脏双手的实干者。
 
-- **DevOps 效能度量** — 工程团队的数据驱动管理
-- **AI Agent** — 大模型驱动的智能助手与自动化
-- **钉钉生态** — 企业级 IM 机器人与插件开发
+我们相信：真正的理解来自动手实践，而非纸上谈兵。在代码中寻找规律，在实验中验证假设，在失败中积累智慧。
 
-## 开源项目
+## 我们在做什么
 
-- [openclaw-dingtalk](https://github.com/adongguo/openclaw-dingtalk) — OpenClaw 钉钉插件 ⭐17
+- **解构自然规律** — 用计算、数据和工程手段，拆解世界运行的底层逻辑
+- **探索维度突破** — 研究时间、空间、信息的本质，寻找超越四维限制的路径
+- **构建未来工具** — AI Agent、DevOps 效能度量、开源基础设施
 
-## 联系方式
+## 核心信条
+
+1. **手要脏** — 不动手就没有发言权
+2. **敢拆解** — 任何"不可能"都值得被解构
+3. **向前看** — 过去是数据，未来才是方向
+4. **开放透明** — 知识不藏私，成果不围墙
+
+## 联系
 
 - GitHub: [@adongguo](https://github.com/adongguo)

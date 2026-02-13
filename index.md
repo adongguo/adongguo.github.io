@@ -2,28 +2,28 @@
 layout: home
 
 hero:
-  name: "Adongguo"
-  text: "DevOps · AI · Open Source"
-  tagline: 探索 DevOps 效能洞察与 AI 智能化的交汇点
+  name: "Dirty Hands"
+  text: "解构规律 · 突破边界 · 面向未来"
+  tagline: 我们是实干派。弄脏双手，才能触摸真实。
   actions:
     - theme: brand
-      text: 阅读博客
-      link: /blog/
+      text: 了解我们
+      link: /about
     - theme: alt
-      text: 我的项目
-      link: /projects/
+      text: 宣言
+      link: /manifesto
     - theme: alt
       text: GitHub
       link: https://github.com/adongguo
 
 features:
-  - icon: 🔧
-    title: DevOps 效能洞察
-    details: 研究工程效能度量与优化，关注 LinearB、Jellyfish、Swarmia 等前沿产品
-  - icon: 🤖
-    title: AI 智能化
-    details: 探索 AI Agent、大模型应用与自动化工具链的结合
-  - icon: 🔌
-    title: 开源贡献
-    details: openclaw-dingtalk 钉钉插件作者，活跃于 AI 工具生态
+  - icon: 🔬
+    title: 解构自然规律
+    details: 不满足于表象，深入底层机制。用实验、代码和数据拆解世界运行的逻辑。
+  - icon: 🚀
+    title: 突破维度限制
+    details: 人类被困在三维空间和线性时间里。我们探索突破四维边界的可能性。
+  - icon: 🔥
+    title: 实干者联盟
+    details: 空谈误事，实干兴邦。脏手团队只做一件事——把手弄脏，把事做成。
 ---

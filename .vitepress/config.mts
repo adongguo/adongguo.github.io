@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: "Adongguo",
-  description: "DevOps · AI · Open Source",
+  title: "Dirty Hands",
+  description: "脏手团队 — 解构规律，突破边界，面向未来",
   lang: 'zh-CN',
   cleanUrls: true,
 
@@ -14,6 +14,7 @@ export default defineConfig({
     logo: '/logo.svg',
     nav: [
       { text: '首页', link: '/' },
+      { text: '宣言', link: '/manifesto' },
       { text: '博客', link: '/blog/' },
       { text: '项目', link: '/projects/' },
       { text: '关于', link: '/about' },
@@ -35,8 +36,8 @@ export default defineConfig({
     ],
 
     footer: {
-      message: 'Powered by VitePress',
-      copyright: '© 2025-present Adongguo'
+      message: 'Get your hands dirty.',
+      copyright: '© 2025-present Dirty Hands Team'
     },
 
     search: {

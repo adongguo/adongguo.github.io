@@ -1,7 +1,7 @@
 # 博客
 
-记录技术探索与思考。
+脏手团队的实践记录与思考。
 
 ## 2026
 
-- [Hello VitePress](/blog/hello-vitepress) — 博客迁移到 VitePress
+- [Hello VitePress](/blog/hello-vitepress) — 站点诞生

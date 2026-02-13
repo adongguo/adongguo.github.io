@@ -1,5 +1,5 @@
 {
-  "name": "adongguo-blog",
+  "name": "dirtyhands-team",
   "version": "1.0.0",
   "scripts": {
     "docs:dev": "vitepress dev",
@@ -11,14 +11,14 @@
     "url": "git+https://github.com/adongguo/adongguo.github.io.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Dirty Hands Team",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/adongguo/adongguo.github.io/issues"
   },
-  "homepage": "https://github.com/adongguo/adongguo.github.io#readme",
-  "description": "",
+  "homepage": "https://dirtyhands.team",
+  "description": "Dirty Hands Team — 解构规律，突破边界，面向未来",
   "devDependencies": {
-    "vitepress": "^1.6.4"
+    "vitepress": "^1.6.3"
   }
 }
