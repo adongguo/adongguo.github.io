@@ -13,7 +13,7 @@ validateProducts(products)
 
 export default defineConfig({
   title: '自然常量',
-  description: '自然常量 zteam — 打造工作流里可以依赖的常量',
+  description: '自然常量 zteam — Dirty Hands 的团队，打造工作流里可以依赖的常量',
   lang: 'zh-CN',
   cleanUrls: true,
 
@@ -48,7 +48,7 @@ export default defineConfig({
 
     footer: {
       message: '文中提及的第三方产品名称和商标归各自权利人所有，本站产品与其无隶属关系。',
-      copyright: '© 2025-present 自然常量 zteam',
+      copyright: '© 2025-present Dirty Hands · 自然常量 zteam',
     },
 
     search: {
