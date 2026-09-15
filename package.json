@@ -1,23 +1,27 @@
 {
-  "name": "dirtyhands-team",
+  "name": "zteam-site",
   "version": "1.0.0",
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
-    "docs:preview": "vitepress preview"
+    "docs:preview": "vitepress preview",
+    "test": "node --test \"scripts/**/*.test.mjs\" \".vitepress/lib/**/*.test.mjs\"",
+    "test:coverage": "mkdir -p coverage && node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info \"scripts/**/*.test.mjs\" \".vitepress/lib/**/*.test.mjs\"",
+    "check:public": "node scripts/check-public.mjs",
+    "check:public:dist": "node scripts/check-public.mjs --dist"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/adongguo/adongguo.github.io.git"
   },
   "keywords": [],
-  "author": "Dirty Hands Team",
+  "author": "自然常量 zteam",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/adongguo/adongguo.github.io/issues"
   },
   "homepage": "https://dirtyhands.team",
-  "description": "Dirty Hands Team — 解构规律，突破边界，面向未来",
+  "description": "自然常量 zteam — 打造工作流里可以依赖的常量",
   "devDependencies": {
     "vitepress": "^1.6.3"
   }

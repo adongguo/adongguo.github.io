@@ -2,7 +2,7 @@
 
 <div style="text-align: center; margin: 2em 0;">
 
-## 🖐️ The Dirty Hands Manifesto
+## 🖐️ Dirty Hands 宣言
 
 </div>
 
@@ -26,7 +26,7 @@
 
 ---
 
-## 为什么叫"脏手"？
+## 为什么要弄脏双手？
 
 因为真相藏在泥土里，不在象牙塔上。
 

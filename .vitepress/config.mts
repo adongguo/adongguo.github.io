@@ -1,48 +1,58 @@
 import { defineConfig } from 'vitepress'
 
+import {
+  buildNav,
+  productSidebars,
+  siteExcludes,
+  sitemapItems,
+  validateProducts,
+} from './lib/site.mjs'
+import { products } from './products.mjs'
+
+validateProducts(products)
+
 export default defineConfig({
-  title: "Dirty Hands",
-  description: "脏手团队 — 解构规律，突破边界，面向未来",
+  title: '自然常量',
+  description: '自然常量 zteam — 打造工作流里可以依赖的常量',
   lang: 'zh-CN',
   cleanUrls: true,
+
+  srcExclude: siteExcludes(products),
+
+  sitemap: {
+    hostname: 'https://dirtyhands.team',
+    transformItems: sitemapItems,
+  },
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+    ['meta', { name: 'theme-color', content: '#0f766e' }],
+    ['meta', { property: 'og:site_name', content: '自然常量' }],
   ],
 
   themeConfig: {
-    logo: '/logo.svg',
-    nav: [
-      { text: '首页', link: '/' },
-      { text: '宣言', link: '/manifesto' },
-      { text: '博客', link: '/blog/' },
-      { text: '项目', link: '/projects/' },
-      { text: '关于', link: '/about' },
-    ],
+    logo: { src: '/logo.svg', alt: '自然常量' },
+
+    nav: buildNav(products),
 
     sidebar: {
       '/blog/': [
         {
           text: '博客文章',
-          items: [
-            { text: '欢迎', link: '/blog/' },
-          ]
-        }
+          items: [{ text: '欢迎', link: '/blog/' }],
+        },
       ],
+      ...productSidebars(products),
     },
 
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/adongguo' },
-    ],
-
     footer: {
-      message: 'Get your hands dirty.',
-      copyright: '© 2025-present Dirty Hands Team'
+      message: '文中提及的第三方产品名称和商标归各自权利人所有，本站产品与其无隶属关系。',
+      copyright: '© 2025-present 自然常量 zteam',
     },
 
     search: {
-      provider: 'local'
+      provider: 'local',
     },
 
     outline: {
@@ -58,5 +68,11 @@ export default defineConfig({
       prev: '上一篇',
       next: '下一篇',
     },
+
+    darkModeSwitchLabel: '外观',
+    lightModeSwitchTitle: '切换到浅色模式',
+    darkModeSwitchTitle: '切换到深色模式',
+    sidebarMenuLabel: '菜单',
+    returnToTopLabel: '回到顶部',
   },
 })
