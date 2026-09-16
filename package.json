@@ -23,6 +23,7 @@
   "homepage": "https://dirtyhands.team",
   "description": "自然常量 zteam — Dirty Hands 的团队，打造工作流里可以依赖的常量",
   "devDependencies": {
+    "@fontsource-variable/martian-mono": "^5.3.0",
     "vitepress": "^1.6.3"
   }
 }

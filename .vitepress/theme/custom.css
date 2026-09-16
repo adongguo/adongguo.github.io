@@ -1,33 +1,602 @@
-/* Brand palette: a teal that keeps AA contrast on the default light and dark
-   backgrounds, used for links, buttons and the hero title. */
-:root {
-  --vp-c-brand-1: #0f766e;
-  --vp-c-brand-2: #0d9488;
-  --vp-c-brand-3: #14b8a6;
-  --vp-c-brand-soft: rgba(20, 184, 166, 0.14);
+/* zteam theme: the default VitePress theme restyled as a measuring instrument.
+   Dark is the primary appearance and light keeps the same system on a pale
+   bench. Colors come from the product icons (terminal green, cyan, violet) with
+   a phosphor teal as the brand signal; Martian Mono sets names, readouts and
+   code. The --zt- tokens feed the --vp- variables the default theme reads. */
 
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #0f766e 20%, #2563eb);
+/* ---------------------------------------------------------------------------
+   Tokens
+   ------------------------------------------------------------------------ */
+
+:root {
+  --zt-font-mono: 'Martian Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', 'PingFang SC', 'Microsoft YaHei', monospace;
+  --zt-font-display: 'Martian Mono Variable', 'Punctuation SC', 'PingFang SC', 'HarmonyOS Sans SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', ui-sans-serif,
+    system-ui, sans-serif;
+
+  --zt-ink-0: #f5f7fa;
+  --zt-ink-1: #ffffff;
+  --zt-ink-2: #edf1f6;
+  --zt-ink-glass: rgba(245, 247, 250, 0.82);
+  --zt-line: rgba(20, 38, 66, 0.1);
+  --zt-line-strong: rgba(20, 38, 66, 0.2);
+  --zt-row-alt: rgba(20, 38, 66, 0.025);
+
+  --zt-text-1: #0b1321;
+  --zt-text-2: #44526a;
+  --zt-text-3: #5f6b80;
+
+  --zt-signal: #0a7c6c;
+  --zt-signal-2: #0b8f7c;
+  --zt-signal-soft: rgba(13, 148, 136, 0.1);
+  --zt-on-signal: #ffffff;
+  --zt-glow: rgba(13, 148, 136, 0.2);
+
+  --zt-spectrum-1: #16a34a;
+  --zt-spectrum-2: #0d9488;
+  --zt-spectrum-3: #0891b2;
+  --zt-spectrum-4: #7c3aed;
+
+  --zt-grid: rgba(20, 38, 66, 0.035);
+  --zt-grid-major: rgba(20, 38, 66, 0.06);
+  --zt-scope-bg: #fbfcfd;
+  --zt-scope-grid: rgba(20, 38, 66, 0.07);
+  --zt-scope-grid-major: rgba(20, 38, 66, 0.16);
+  --zt-scope-glow-opacity: 0.2;
 }
 
 .dark {
-  --vp-c-brand-1: #2dd4bf;
-  --vp-c-brand-2: #14b8a6;
-  --vp-c-brand-3: #0d9488;
-  --vp-c-brand-soft: rgba(45, 212, 191, 0.16);
+  color-scheme: dark;
 
-  --vp-home-hero-name-background: linear-gradient(120deg, #2dd4bf 20%, #60a5fa);
+  --zt-ink-0: #070a10;
+  --zt-ink-1: #0c1119;
+  --zt-ink-2: #131a26;
+  --zt-ink-glass: rgba(7, 10, 16, 0.8);
+  --zt-line: rgba(140, 166, 204, 0.12);
+  --zt-line-strong: rgba(140, 166, 204, 0.22);
+  --zt-row-alt: rgba(140, 166, 204, 0.03);
+
+  --zt-text-1: #e6edf6;
+  --zt-text-2: #9ca9bc;
+  --zt-text-3: #717e93;
+
+  --zt-signal: #34e8c6;
+  --zt-signal-2: #22d3b3;
+  --zt-signal-soft: rgba(52, 232, 198, 0.1);
+  --zt-on-signal: #03201b;
+  --zt-glow: rgba(52, 232, 198, 0.26);
+
+  --zt-spectrum-1: #2fe06f;
+  --zt-spectrum-2: #34e8c6;
+  --zt-spectrum-3: #28c6f2;
+  --zt-spectrum-4: #9068ff;
+
+  --zt-grid: rgba(140, 166, 204, 0.045);
+  --zt-grid-major: rgba(140, 166, 204, 0.08);
+  --zt-scope-bg: #0a0f17;
+  --zt-scope-grid: rgba(140, 166, 204, 0.08);
+  --zt-scope-grid-major: rgba(140, 166, 204, 0.18);
+  --zt-scope-glow-opacity: 0.55;
 }
 
-/* Product icons are square app icons; keep them from dominating the hero. */
-.VPHero .image-src {
-  max-width: 200px;
-  max-height: 200px;
+/* Default theme variables. Declared on :root after the theme's own .dark
+   block, so these win in both appearances and resolve through the tokens. */
+:root {
+  --vp-font-family-mono: var(--zt-font-mono);
+
+  --vp-c-bg: var(--zt-ink-0);
+  --vp-c-bg-alt: var(--zt-ink-1);
+  --vp-c-bg-elv: var(--zt-ink-1);
+  --vp-c-bg-soft: var(--zt-ink-2);
+
+  --vp-c-border: var(--zt-line-strong);
+  --vp-c-divider: var(--zt-line);
+  --vp-c-gutter: var(--zt-line);
+
+  --vp-c-text-1: var(--zt-text-1);
+  --vp-c-text-2: var(--zt-text-2);
+  --vp-c-text-3: var(--zt-text-3);
+
+  --vp-c-brand-1: var(--zt-signal);
+  --vp-c-brand-2: var(--zt-signal-2);
+  --vp-c-brand-3: var(--zt-signal);
+  --vp-c-brand-soft: var(--zt-signal-soft);
+
+  --vp-button-brand-text: var(--zt-on-signal);
+  --vp-button-brand-hover-text: var(--zt-on-signal);
+  --vp-button-brand-active-text: var(--zt-on-signal);
+  --vp-button-alt-border: var(--zt-line-strong);
+  --vp-button-alt-bg: transparent;
+  --vp-button-alt-hover-border: var(--zt-signal);
+  --vp-button-alt-hover-text: var(--zt-signal);
+  --vp-button-alt-hover-bg: var(--zt-signal-soft);
+  --vp-button-alt-active-border: var(--zt-signal);
+  --vp-button-alt-active-text: var(--zt-signal);
+  --vp-button-alt-active-bg: var(--zt-signal-soft);
+
+  --vp-code-font-size: 0.84em;
+  --vp-code-bg: var(--zt-signal-soft);
+  --vp-code-block-bg: var(--zt-ink-1);
+  --vp-code-block-divider-color: var(--zt-line);
+  --vp-code-line-highlight-color: var(--zt-signal-soft);
+  --vp-code-copy-code-bg: var(--zt-ink-2);
+  --vp-code-copy-code-hover-bg: var(--zt-ink-2);
+  --vp-code-copy-code-border-color: var(--zt-line);
+  --vp-code-copy-code-hover-border-color: var(--zt-line-strong);
+
+  --vp-custom-block-info-border: var(--zt-line-strong);
+  --vp-custom-block-info-bg: var(--zt-ink-1);
+  --vp-custom-block-tip-border: rgba(20, 184, 166, 0.32);
+  --vp-custom-block-warning-border: rgba(234, 179, 8, 0.32);
+  --vp-custom-block-danger-border: rgba(244, 63, 94, 0.34);
+
+  --vp-nav-bg-color: var(--zt-ink-glass);
+  --vp-nav-screen-bg-color: var(--zt-ink-0);
+  --vp-local-nav-bg-color: var(--zt-ink-glass);
+  --vp-sidebar-bg-color: var(--zt-ink-0);
+  --vp-backdrop-bg-color: rgba(3, 5, 9, 0.66);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(
+    100deg,
+    var(--zt-text-1) 0%,
+    var(--zt-signal) 58%,
+    var(--zt-spectrum-3) 100%
+  );
+
+  --vp-local-search-bg: var(--zt-ink-1);
+  --vp-local-search-result-bg: var(--zt-ink-1);
+  --vp-local-search-result-border: var(--zt-line);
+  --vp-local-search-result-selected-bg: var(--zt-signal-soft);
+  --vp-local-search-result-selected-border: var(--zt-signal);
+  --vp-local-search-highlight-bg: var(--zt-signal);
+  --vp-local-search-highlight-text: var(--zt-on-signal);
+}
+
+:root {
+  --vp-c-gray-1: #d3dae4;
+  --vp-c-gray-2: #dfe5ee;
+  --vp-c-gray-3: #e8edf3;
+  --vp-c-gray-soft: rgba(20, 38, 66, 0.06);
+}
+
+.dark {
+  --vp-c-gray-1: #2b3446;
+  --vp-c-gray-2: #202837;
+  --vp-c-gray-3: #171e2b;
+  --vp-c-gray-soft: rgba(140, 166, 204, 0.1);
+
+  /* Tinted rather than filled, so callouts read as lit panels on the ink. */
+  --vp-custom-block-tip-bg: rgba(52, 232, 198, 0.06);
+  --vp-custom-block-warning-bg: rgba(234, 179, 8, 0.07);
+  --vp-custom-block-danger-bg: rgba(244, 63, 94, 0.07);
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------ */
+
+::selection {
+  background-color: var(--zt-glow);
+}
+
+/* Martian Mono is wide at its default width; code uses the semi-condensed
+   width so commands and paths stay close to the density of common monospace
+   fonts, while names and readouts keep the wide cut. */
+code,
+kbd,
+samp,
+pre {
+  font-stretch: 87.5%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Navigation
+   ------------------------------------------------------------------------ */
+
+.VPNavBarTitle .title {
+  letter-spacing: 0.06em;
+}
+
+.VPLocalNav {
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
 }
 
 @media (min-width: 960px) {
-  .VPHero .image-src {
-    max-width: 260px;
-    max-height: 260px;
+  .VPNavBar:not(.has-sidebar):not(.home.top),
+  .VPNavBar.has-sidebar:not(.home.top) .content-body {
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
   }
+}
+
+@media (min-width: 768px) {
+  .DocSearch-Button {
+    border-color: var(--zt-line);
+  }
+}
+
+.DocSearch-Button .DocSearch-Button-Key {
+  font-family: var(--zt-font-mono);
+  font-size: 11px;
+}
+
+/* ---------------------------------------------------------------------------
+   Sidebar and outline
+   ------------------------------------------------------------------------ */
+
+@media (min-width: 960px) {
+  .VPSidebar {
+    border-right: 1px solid var(--zt-line);
+  }
+}
+
+.VPSidebar .VPSidebarItem.level-0 > .item > .text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-text-3);
+}
+
+.VPSidebar .VPSidebarItem.level-1.is-active > .item > .indicator {
+  background-color: var(--vp-c-brand-1);
+  box-shadow: 0 0 10px var(--zt-glow);
+}
+
+.VPDocAsideOutline .outline-title {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-text-3);
+}
+
+.VPDocAsideOutline .outline-marker {
+  box-shadow: 0 0 10px var(--zt-glow);
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons
+   ------------------------------------------------------------------------ */
+
+.VPButton.medium,
+.VPButton.big {
+  border-radius: 8px;
+}
+
+.VPButton.medium {
+  padding: 0 22px;
+  line-height: 40px;
+}
+
+.VPButton.brand {
+  transition: color 0.25s, border-color 0.25s, background-color 0.25s, box-shadow 0.25s;
+}
+
+.VPButton.brand:hover {
+  box-shadow: 0 0 0 1px var(--zt-glow), 0 10px 30px -10px var(--zt-glow);
+}
+
+/* ---------------------------------------------------------------------------
+   Home layout: hero, instrument viewport and product modules
+   ------------------------------------------------------------------------ */
+
+/* Graph paper behind the hero, faded out before the content below. */
+.VPHome {
+  position: relative;
+  isolation: isolate;
+}
+
+.VPHome::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: calc(var(--vp-nav-height) * -1);
+  right: 0;
+  left: 0;
+  height: 960px;
+  background-image:
+    linear-gradient(var(--zt-grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--zt-grid-major) 1px, transparent 1px),
+    linear-gradient(var(--zt-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--zt-grid) 1px, transparent 1px);
+  background-position: center top;
+  background-size: 200px 200px, 200px 200px, 40px 40px, 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 62% at 62% 34%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 62% at 62% 34%, #000 30%, transparent 100%);
+  pointer-events: none;
+}
+
+.VPHero .heading {
+  gap: 4px;
+}
+
+.VPHero .name,
+.VPHero .text {
+  letter-spacing: 0;
+}
+
+.VPHero .name {
+  font-family: var(--zt-font-display);
+  font-size: 38px;
+  line-height: 1.2;
+  font-weight: 700;
+  font-stretch: 112.5%;
+}
+
+.VPHero .text {
+  font-size: 26px;
+  line-height: 1.35;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.VPHero .tagline {
+  padding-top: 16px;
+  font-size: 16px;
+  line-height: 1.75;
+  font-weight: 400;
+  text-wrap: pretty;
+}
+
+@media (min-width: 640px) {
+  .VPHero .name {
+    font-size: 50px;
+  }
+
+  .VPHero .text {
+    font-size: 34px;
+  }
+
+  .VPHero .tagline {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero.has-image .container {
+    align-items: center;
+  }
+
+  .VPHero .name {
+    font-size: 60px;
+  }
+
+  .VPHero .text {
+    max-width: 592px;
+    font-size: 40px;
+  }
+
+  .VPHero .tagline {
+    padding-top: 20px;
+    max-width: 540px;
+  }
+}
+
+/* The hero image becomes a framed instrument screen: graph paper with corner
+   ticks. On the home page the constant scope fills it; product pages center
+   their app icon in it. */
+.VPHero .image {
+  margin: 0 0 40px;
+}
+
+.VPHero .image .image-container {
+  position: relative;
+  margin: 0 auto;
+  border: 1px solid var(--zt-line-strong);
+  border-radius: 14px;
+  width: min(300px, 100%);
+  height: auto;
+  aspect-ratio: 1;
+  background-color: var(--zt-scope-bg);
+  background-image:
+    radial-gradient(closest-side, var(--zt-signal-soft), transparent),
+    linear-gradient(var(--zt-scope-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--zt-scope-grid) 1px, transparent 1px);
+  background-position: center;
+  background-size: 100% 100%, 10% 10%, 10% 10%;
+  box-shadow: 0 40px 90px -50px var(--zt-glow);
+  overflow: hidden;
+}
+
+.VPHero .image .image-container::before {
+  --tick: var(--zt-text-3);
+
+  content: '';
+  position: absolute;
+  z-index: 2;
+  inset: 10px;
+  background:
+    linear-gradient(var(--tick), var(--tick)) left top / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) left top / 1px 12px,
+    linear-gradient(var(--tick), var(--tick)) right top / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) right top / 1px 12px,
+    linear-gradient(var(--tick), var(--tick)) left bottom / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) left bottom / 1px 12px,
+    linear-gradient(var(--tick), var(--tick)) right bottom / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) right bottom / 1px 12px;
+  background-repeat: no-repeat;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.VPHero .image .image-bg {
+  display: none;
+}
+
+.VPHero .image-src {
+  max-width: 58%;
+  max-height: 58%;
+}
+
+@media (min-width: 640px) {
+  .VPHero .image .image-container {
+    width: 360px;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero .image {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin: 0;
+  }
+
+  .VPHero .image .image-container {
+    display: block;
+    margin: 0;
+    width: 400px;
+    transform: none;
+  }
+}
+
+/* Product modules */
+.VPFeatures .VPFeature {
+  position: relative;
+  border: 1px solid var(--zt-line);
+  border-radius: 10px;
+  background-color: var(--zt-ink-1);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.VPFeatures .VPFeature.link:hover {
+  border-color: var(--zt-line-strong);
+  box-shadow: 0 24px 60px -36px var(--zt-glow);
+}
+
+.VPFeatures .VPFeature.link::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: 16px;
+  left: 16px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--zt-spectrum-1),
+    var(--zt-spectrum-2),
+    var(--zt-spectrum-3),
+    var(--zt-spectrum-4)
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.VPFeatures .VPFeature.link:hover::after,
+.VPFeatures .VPFeature.link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.VPHome:has(.zt-scope) .VPFeature .title {
+  font-family: var(--zt-font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.VPFeatures .VPFeature .details {
+  font-weight: 400;
+}
+
+/* ---------------------------------------------------------------------------
+   Documentation content
+   ------------------------------------------------------------------------ */
+
+.vp-doc h1 {
+  font-weight: 700;
+}
+
+/* A short lit segment on the h2 rule, like the zero mark on a scale. */
+.vp-doc h2::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 32px;
+  height: 1px;
+  background-color: var(--vp-c-brand-1);
+  box-shadow: 0 0 8px var(--zt-glow);
+}
+
+.vp-doc a {
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.vp-doc a:hover {
+  text-decoration-color: currentColor;
+}
+
+.vp-doc blockquote {
+  border-left-color: var(--zt-line-strong);
+}
+
+.vp-doc div[class*='language-'] {
+  border: 1px solid var(--zt-line);
+}
+
+@media (max-width: 639px) {
+  .vp-doc div[class*='language-'] {
+    border-right: 0;
+    border-left: 0;
+  }
+}
+
+.vp-doc [class*='language-'] > span.lang {
+  font-family: var(--zt-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vp-doc tr,
+.vp-doc tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.vp-doc tbody tr:nth-child(2n) {
+  background-color: var(--zt-row-alt);
+}
+
+.vp-doc th {
+  background-color: var(--zt-ink-1);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+/* On phones a long path in one column would squeeze a label column down to a
+   single character per line; let the table scroll instead. */
+@media (max-width: 639px) {
+  .vp-doc th,
+  .vp-doc td {
+    min-width: 6em;
+  }
+}
+
+.vp-doc .custom-block {
+  border-left-width: 3px;
+  border-radius: 6px;
+}
+
+.vp-doc .custom-block.info {
+  border-left-color: var(--zt-text-3);
+}
+
+.vp-doc .custom-block.tip {
+  border-left-color: var(--vp-c-tip-1);
+}
+
+.vp-doc .custom-block.warning {
+  border-left-color: var(--vp-c-warning-1);
+}
+
+.vp-doc .custom-block.danger {
+  border-left-color: var(--vp-c-danger-1);
 }

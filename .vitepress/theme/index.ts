@@ -1,6 +1,7 @@
 import DefaultTheme from 'vitepress/theme'
 import type { Theme } from 'vitepress'
 
+import '@fontsource-variable/martian-mono/standard.css'
 import './custom.css'
 
 export default {

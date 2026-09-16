@@ -1,13 +1,11 @@
 ---
 layout: home
+heroScope: true
 
 hero:
   name: 自然常量
   text: 工作流里可以依赖的常量
   tagline: zteam 是 Dirty Hands 的团队。AI 工具日新月异，我们把工程师每天离不开的环节，打磨成稳定、可编程、值得依赖的工具。
-  image:
-    src: /logo.svg
-    alt: 自然常量
   actions:
     - theme: brand
       text: 查看产品
