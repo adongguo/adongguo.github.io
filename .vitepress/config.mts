@@ -64,7 +64,9 @@ export default defineConfig({
     },
 
     footer: {
-      message: '文中提及的第三方产品名称和商标归各自权利人所有，本站产品与其无隶属关系。',
+      message:
+        '文中提及的第三方产品名称和商标归各自权利人所有，本站产品与其无隶属关系。<br>' +
+        '<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">京ICP备2026072813号-1</a>',
       copyright: '© 2025-present Dirty Hands · 自然常量 zteam',
     },
 
